@@ -1,7 +1,7 @@
 # Mnemon Harness Public Beta
 
-`mnemon-harness` is an experimental beta for installing host-agent integration
-assets and connecting them to a local Mnemon service.
+`mnemon-harness` is an experimental beta for installing host integration assets
+and connecting them to a local Mnemon service.
 
 Stable Mnemon remains the memory CLI. The harness is source-build only, has no
 compatibility guarantee, and is currently scoped to Agent Integration, Local
@@ -11,7 +11,7 @@ Mnemon, standard event packages, and Remote Workspace sync.
 
 The user-facing command surface is intentionally small:
 
-- `setup`: install Agent Integration shim assets.
+- `setup`: install Agent Integration assets.
 - `local`: run or inspect Local Mnemon.
 - `status`: show Agent Integration, Local Mnemon, and Remote Workspace state.
 - `sync`: connect Local Mnemon to a Remote Workspace.
@@ -28,6 +28,10 @@ such as `.codex/` and `.claude/` are generated surfaces. Local state lives under
 The current beta does not promise production readiness, automatic apply,
 multi-agent governance, broad organization scope, or a general evaluation
 runtime.
+
+Architecture vocabulary for new harness work is frozen in
+[`protocol-vocabulary-freeze.md`](protocol-vocabulary-freeze.md). Use that
+document when naming new protocol concepts or reviewing architecture changes.
 
 ## 3. Separation From Stable Mnemon
 

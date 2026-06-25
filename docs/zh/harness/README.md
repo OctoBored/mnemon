@@ -1,6 +1,6 @@
 # Mnemon Harness Public Beta
 
-`mnemon-harness` 是实验性 beta，用于安装 host-agent integration 资产，并把
+`mnemon-harness` 是实验性 beta，用于安装 host integration 资产，并把
 它们连接到本地 Mnemon 服务。
 
 稳定版 Mnemon 仍然是 memory CLI。Harness 只支持源码构建，没有兼容性保证，
@@ -10,7 +10,7 @@
 
 面向用户的命令面刻意保持很小：
 
-- `setup`: 安装 Agent Integration shim 资产。
+- `setup`: 安装 Agent Integration 资产。
 - `local`: 运行或查看 Local Mnemon。
 - `status`: 查看 Agent Integration、Local Mnemon 和 Remote Workspace 状态。
 - `sync`: 把 Local Mnemon 连接到 Remote Workspace。
@@ -25,6 +25,10 @@
 
 当前 beta 不承诺生产可用、自动 apply、多 agent governance、广义组织范围，
 或通用 eval runtime。
+
+新的 harness 架构工作使用
+[`protocol-vocabulary-freeze.md`](protocol-vocabulary-freeze.md) 中冻结的词汇。
+新增协议概念或 review 架构改动时，应以该文档为准。
 
 ## 3. 与稳定版 Mnemon 分离
 
