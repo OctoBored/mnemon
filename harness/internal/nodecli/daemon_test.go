@@ -1,4 +1,4 @@
-package main
+package nodecli
 
 import (
 	"bytes"
@@ -20,7 +20,7 @@ import (
 func TestDaemonStatusStoppedWhenNoPidfile(t *testing.T) {
 	root := t.TempDir()
 	var out bytes.Buffer
-	if err := daemonStatus([]string{"--root", root}, &out, &out); err != nil {
+	if err := Status([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("status: %v", err)
 	}
 	if !strings.Contains(out.String(), "stopped") {
@@ -39,7 +39,7 @@ func TestDaemonStatusRunningForLivePid(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
-	if err := daemonStatus([]string{"--root", root}, &out, &out); err != nil {
+	if err := Status([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("status: %v", err)
 	}
 	if !strings.Contains(out.String(), "running") {
@@ -58,7 +58,7 @@ func TestDaemonDownStalePidfileIsIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
-	if err := daemonDown([]string{"--root", root}, &out, &out); err != nil {
+	if err := Down([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("down on stale pidfile must not error: %v", err)
 	}
 	if _, err := os.Stat(pidPath); !os.IsNotExist(err) {
@@ -69,7 +69,7 @@ func TestDaemonDownStalePidfileIsIdempotent(t *testing.T) {
 func TestDaemonDownNotRunning(t *testing.T) {
 	root := t.TempDir()
 	var out bytes.Buffer
-	if err := daemonDown([]string{"--root", root}, &out, &out); err != nil {
+	if err := Down([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("down with no pidfile must be a no-op, got %v", err)
 	}
 	if !strings.Contains(out.String(), "not running") {
@@ -87,7 +87,7 @@ func TestDaemonLogsPrintsFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
-	if err := daemonLogs([]string{"--root", root}, &out, &out); err != nil {
+	if err := Logs([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("logs: %v", err)
 	}
 	if !strings.Contains(out.String(), "Local Mnemon: ready") {
@@ -98,7 +98,7 @@ func TestDaemonLogsPrintsFile(t *testing.T) {
 func TestDaemonLogsNoFileYet(t *testing.T) {
 	root := t.TempDir()
 	var out bytes.Buffer
-	if err := daemonLogs([]string{"--root", root}, &out, &out); err != nil {
+	if err := Logs([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("logs with no file must not error: %v", err)
 	}
 	if !strings.Contains(out.String(), "no log yet") {
@@ -122,7 +122,7 @@ func TestDaemonUpRefusesOccupiedListenAddress(t *testing.T) {
 		t.Fatalf("setup: %v", err)
 	}
 	var out bytes.Buffer
-	err = daemonUp([]string{"--root", root, "--addr", addr}, &out, &out)
+	err = Up([]string{"--root", root, "--addr", addr}, &out, &out)
 	if err == nil || !strings.Contains(err.Error(), "listen address") || !strings.Contains(err.Error(), "unavailable") {
 		t.Fatalf("daemon up should refuse occupied address, got %v output=%q", err, out.String())
 	}

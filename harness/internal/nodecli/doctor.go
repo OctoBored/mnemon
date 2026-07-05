@@ -1,4 +1,4 @@
-package main
+package nodecli
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ import (
 	"github.com/mnemon-dev/mnemon/harness/internal/app"
 )
 
-func daemonDoctor(args []string, out, errw io.Writer) error {
+func Doctor(args []string, out, errw io.Writer) error {
 	fs := flag.NewFlagSet("mnemond doctor", flag.ContinueOnError)
 	fs.SetOutput(errw)
 	rootFlag := fs.String("root", ".", "project root")

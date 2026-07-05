@@ -1,4 +1,4 @@
-package main
+package nodecli
 
 import (
 	"flag"
@@ -25,9 +25,9 @@ func daemonPaths(root string) (dir, pidPath, logPath string) {
 
 // rootFlag parses --root for the lifecycle verbs that take no serve flags (down/status/logs).
 func rootFlag(args []string, errw io.Writer, verb ...string) (string, error) {
-	name := "mnemond"
+	name := FaceName
 	if len(verb) > 0 && strings.TrimSpace(verb[0]) != "" {
-		name = "mnemond " + strings.TrimSpace(verb[0])
+		name = FaceName + " " + strings.TrimSpace(verb[0])
 	}
 	fs := flag.NewFlagSet(name, flag.ContinueOnError)
 	fs.SetOutput(errw)
@@ -70,14 +70,14 @@ func processAlive(pid int) bool {
 // stdout/stderr to the logfile), records its pid, and confirms it began listening. It PRE-FLIGHTS the
 // boot in the foreground (parseServe resolves setup + T1), so a misconfigured project reports the
 // error directly here instead of silently in the log. Refuses to start a second daemon over a live one.
-func daemonUp(args []string, out, errw io.Writer) error {
+func Up(args []string, out, errw io.Writer) error {
 	cfg, err := parseServe(args, errw)
 	if err != nil {
 		return err
 	}
 	dir, pidPath, logPath := daemonPaths(cfg.projectRoot)
 	if pid, alive := readLivePid(pidPath); alive {
-		return fmt.Errorf("already running (pid %d); run `mnemond down` first", pid)
+		return fmt.Errorf("already running (pid %d); run `%s down` first", pid, FaceName)
 	}
 	if err := ensureListenAddrAvailable(cfg.listenAddr); err != nil {
 		return err
@@ -94,7 +94,7 @@ func daemonUp(args []string, out, errw io.Writer) error {
 	if err != nil {
 		return err
 	}
-	child := exec.Command(exe, append([]string{"serve"}, args...)...)
+	child := exec.Command(exe, append(append([]string{}, ServeChildArgv...), args...)...)
 	child.Stdout = logf
 	child.Stderr = logf
 	child.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
@@ -114,7 +114,7 @@ func daemonUp(args []string, out, errw io.Writer) error {
 		return err
 	}
 	_ = child.Process.Release()
-	fmt.Fprintf(out, "mnemond: started (pid %d) on %s\nlogs: %s\n", pid, cfg.listenAddr, logPath)
+	fmt.Fprintf(out, "node: started (pid %d) on %s\nlogs: %s\n", pid, cfg.listenAddr, logPath)
 	return nil
 }
 
@@ -147,7 +147,7 @@ func waitListening(pid int, addr string) error {
 // daemonDown signals the recorded daemon to stop (SIGTERM, the same signal the foreground serve
 // traps for graceful shutdown), waits for it to exit, and removes the pidfile. A stale or absent
 // pidfile is reported, not an error — `down` is idempotent.
-func daemonDown(args []string, out, errw io.Writer) error {
+func Down(args []string, out, errw io.Writer) error {
 	root, err := rootFlag(args, errw, "down")
 	if err != nil {
 		return err
@@ -155,12 +155,12 @@ func daemonDown(args []string, out, errw io.Writer) error {
 	_, pidPath, _ := daemonPaths(root)
 	pid, alive := readLivePid(pidPath)
 	if pid == 0 {
-		fmt.Fprintln(out, "mnemond: not running")
+		fmt.Fprintln(out, "node: not running")
 		return nil
 	}
 	if !alive {
 		_ = os.Remove(pidPath)
-		fmt.Fprintf(out, "mnemond: not running (removed stale pidfile for pid %d)\n", pid)
+		fmt.Fprintf(out, "node: not running (removed stale pidfile for pid %d)\n", pid)
 		return nil
 	}
 	if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
@@ -176,7 +176,7 @@ func daemonDown(args []string, out, errw io.Writer) error {
 		return fmt.Errorf("daemon (pid %d) did not stop within 5s", pid)
 	}
 	_ = os.Remove(pidPath)
-	fmt.Fprintf(out, "mnemond: stopped (pid %d)\n", pid)
+	fmt.Fprintf(out, "node: stopped (pid %d)\n", pid)
 	return nil
 }
 
@@ -184,7 +184,7 @@ func daemonDown(args []string, out, errw io.Writer) error {
 // capability packages under .mnemon/loops. It is a single verb (stop the recorded pid, wait, then
 // `up` with the same flags), NOT a watch and NOT two shelled commands. Pre-flighting the boot (via
 // daemonUp) keeps a misconfigured project from leaving the daemon down.
-func daemonReload(args []string, out, errw io.Writer) error {
+func Reload(args []string, out, errw io.Writer) error {
 	cfg, err := parseServe(args, errw)
 	if err != nil {
 		return err
@@ -204,29 +204,29 @@ func daemonReload(args []string, out, errw io.Writer) error {
 			return fmt.Errorf("daemon (pid %d) did not stop for reload within 5s", pid)
 		}
 		_ = os.Remove(pidPath)
-		fmt.Fprintf(out, "mnemond: stopped (pid %d) for reload\n", pid)
+		fmt.Fprintf(out, "node: stopped (pid %d) for reload\n", pid)
 	}
 	// up re-reads the catalog before serving again.
-	return daemonUp(args, out, errw)
+	return Up(args, out, errw)
 }
 
 // daemonStatus reports whether the recorded daemon is alive.
-func daemonStatus(args []string, out, errw io.Writer) error {
+func Status(args []string, out, errw io.Writer) error {
 	root, err := rootFlag(args, errw, "status")
 	if err != nil {
 		return err
 	}
 	_, pidPath, _ := daemonPaths(root)
 	if pid, alive := readLivePid(pidPath); alive {
-		fmt.Fprintf(out, "mnemond: running (pid %d)\n", pid)
+		fmt.Fprintf(out, "node: running (pid %d)\n", pid)
 	} else {
-		fmt.Fprintln(out, "mnemond: stopped")
+		fmt.Fprintln(out, "node: stopped")
 	}
 	return nil
 }
 
 // daemonLogs prints the daemon's captured stdout/stderr.
-func daemonLogs(args []string, out, errw io.Writer) error {
+func Logs(args []string, out, errw io.Writer) error {
 	root, err := rootFlag(args, errw, "logs")
 	if err != nil {
 		return err
@@ -235,7 +235,7 @@ func daemonLogs(args []string, out, errw io.Writer) error {
 	data, err := os.ReadFile(logPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Fprintln(out, "mnemond: no log yet")
+			fmt.Fprintln(out, "node: no log yet")
 			return nil
 		}
 		return err

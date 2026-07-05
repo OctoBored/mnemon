@@ -26,8 +26,9 @@ var (
 )
 
 var daemonCmd = &cobra.Command{
-	Use:   "daemon",
-	Short: "Run and inspect the harness daemon",
+	Use:        "daemon",
+	Short:      "Run and inspect the harness daemon",
+	Deprecated: "use `mnemon-harness node` (single boot face; this stub is removed at S6)",
 }
 
 var daemonStartCmd = &cobra.Command{

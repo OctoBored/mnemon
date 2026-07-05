@@ -50,6 +50,7 @@ var packageMainAxisInventory = map[string]packageMainAxis{
 	"hostagent":       {owner: ownerHostAgent, role: "hostagent setup and thin shims", target: "hostagent"},
 	"interaction":     {owner: ownerInteractionPoint, role: "external stimulus material separated into rule/narrative/refs", target: "interaction/event-material"},
 	"mnemonhub":       {owner: ownerMnemonhub, role: "remote accepted event exchange server and exchange mechanics", target: "mnemonhub"},
+	"nodecli":         {owner: ownerMnemond, role: "node lifecycle CLI shared by the mnemon-harness node group and the mnemond compat shim (R4 S2 absorption)", target: "mnemond/nodecli"},
 	"participant":     {owner: ownerParticipant, role: "principal identity and participant list helpers shared by product config and adapters", target: "participant"},
 	"productconfig":   {owner: ownerProductConfig, role: "harness product configuration for agents, connections, daemon workers, and surfaces", target: "product/config"},
 	"replay":          {owner: ownerMnemond, role: "mnemond determinism verification", target: "mnemond/replay"},

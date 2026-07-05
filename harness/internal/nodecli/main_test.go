@@ -1,4 +1,4 @@
-package main
+package nodecli
 
 import (
 	"bytes"
@@ -13,7 +13,7 @@ import (
 // Boot smoke: without setup artifacts the daemon refuses with the SAME product remediation
 // `mnemon-harness local run` gives (shared app.ResolveLocalBoot — alias, not fork).
 func TestRunWithoutSetupReportsNotSetUp(t *testing.T) {
-	err := run(context.Background(), []string{"--root", t.TempDir()}, io.Discard, io.Discard)
+	err := Run(context.Background(), []string{"--root", t.TempDir()}, io.Discard, io.Discard)
 	if err == nil {
 		t.Fatal("daemon boot without setup must fail")
 	}
@@ -37,7 +37,7 @@ func TestRunRefusesNonLoopbackAddr(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("setup: %v", err)
 	}
-	err := run(context.Background(), []string{"--root", root, "--addr", "0.0.0.0:0"}, io.Discard, io.Discard)
+	err := Run(context.Background(), []string{"--root", root, "--addr", "0.0.0.0:0"}, io.Discard, io.Discard)
 	if err == nil || !strings.Contains(err.Error(), "loopback") {
 		t.Fatalf("non-loopback --addr must be refused (T1), got: %v", err)
 	}
@@ -46,7 +46,7 @@ func TestRunRefusesNonLoopbackAddr(t *testing.T) {
 func TestHelpDescribesLocalEventNode(t *testing.T) {
 	for _, args := range [][]string{{"--help"}, {"help"}} {
 		var errw bytes.Buffer
-		err := run(context.Background(), args, io.Discard, &errw)
+		err := Run(context.Background(), args, io.Discard, &errw)
 		if err != nil {
 			t.Fatalf("%v help should exit successfully, got %v", args, err)
 		}
@@ -61,12 +61,12 @@ func TestHelpDescribesLocalEventNode(t *testing.T) {
 
 func TestAgentHelpListsLocalDriveSourceCommand(t *testing.T) {
 	var errw bytes.Buffer
-	err := run(context.Background(), []string{"agent", "--help"}, io.Discard, &errw)
+	err := Run(context.Background(), []string{"agent", "--help"}, io.Discard, &errw)
 	if err != nil {
 		t.Fatalf("agent help should exit successfully, got %v", err)
 	}
 	got := errw.String()
-	for _, want := range []string{"local managed-agent drive sources", "mnemond agent run", "[mnemon:wake]", "managed runtime"} {
+	for _, want := range []string{"local managed-agent drive source", "wake [flags]", "[mnemon:wake]", "managed runtime"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("agent help missing %q:\n%s", want, got)
 		}
@@ -87,7 +87,7 @@ func TestLifecycleHelpExitsSuccessfully(t *testing.T) {
 		{[]string{"doctor", "--help"}, "Usage of mnemond doctor"},
 	} {
 		var errw bytes.Buffer
-		err := run(context.Background(), tc.args, io.Discard, &errw)
+		err := Run(context.Background(), tc.args, io.Discard, &errw)
 		if err != nil {
 			t.Fatalf("%v help should exit successfully, got %v", tc.args, err)
 		}
@@ -99,7 +99,7 @@ func TestLifecycleHelpExitsSuccessfully(t *testing.T) {
 
 func TestAgentRunHelpFramesLocalDriveSource(t *testing.T) {
 	var errw bytes.Buffer
-	err := run(context.Background(), []string{"agent", "run", "--help"}, io.Discard, &errw)
+	err := Run(context.Background(), []string{"agent", "run", "--help"}, io.Discard, &errw)
 	if err != nil {
 		t.Fatalf("agent run help should exit successfully, got %v", err)
 	}

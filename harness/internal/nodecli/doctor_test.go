@@ -1,4 +1,4 @@
-package main
+package nodecli
 
 import (
 	"bytes"
@@ -16,7 +16,7 @@ import (
 func TestDoctorReportsMissingLocalConfigWithoutMutating(t *testing.T) {
 	root := t.TempDir()
 	var out bytes.Buffer
-	if err := daemonDoctor([]string{"--root", root}, &out, &out); err != nil {
+	if err := Doctor([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("doctor: %v", err)
 	}
 	got := out.String()
@@ -48,7 +48,7 @@ func TestDoctorReportsConfiguredLocalEventNode(t *testing.T) {
 		t.Fatalf("setup: %v", err)
 	}
 	var out bytes.Buffer
-	if err := daemonDoctor([]string{"--root", root}, &out, &out); err != nil {
+	if err := Doctor([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("doctor: %v", err)
 	}
 	got := out.String()
@@ -76,7 +76,7 @@ func TestDoctorReportsBackgroundDaemonState(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out bytes.Buffer
-	if err := daemonDoctor([]string{"--root", root}, &out, &out); err != nil {
+	if err := Doctor([]string{"--root", root}, &out, &out); err != nil {
 		t.Fatalf("doctor: %v", err)
 	}
 	if got := out.String(); !strings.Contains(got, "- Background daemon: running (pid "+strconv.Itoa(os.Getpid())+")") {

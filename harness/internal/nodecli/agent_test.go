@@ -1,4 +1,4 @@
-package main
+package nodecli
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ import (
 
 func TestAgentRunDryRunPrintsSentinelOnly(t *testing.T) {
 	var out, errw bytes.Buffer
-	err := run(context.Background(), []string{"agent", "run", "--principal", "codex-a@project", "--dry-run"}, &out, &errw)
+	err := Run(context.Background(), []string{"agent", "run", "--principal", "codex-a@project", "--dry-run"}, &out, &errw)
 	if err != nil {
 		t.Fatalf("agent run dry-run: %v\nstderr=%s", err, errw.String())
 	}
@@ -29,7 +29,7 @@ func TestAgentRunDryRunPrintsSentinelOnly(t *testing.T) {
 
 func TestAgentRunRequiresPrincipal(t *testing.T) {
 	var out, errw bytes.Buffer
-	err := run(context.Background(), []string{"agent", "run", "--dry-run"}, &out, &errw)
+	err := Run(context.Background(), []string{"agent", "run", "--dry-run"}, &out, &errw)
 	if err == nil || !strings.Contains(err.Error(), "--principal") {
 		t.Fatalf("missing principal should fail clearly, got err=%v out=%q stderr=%q", err, out.String(), errw.String())
 	}
@@ -37,7 +37,7 @@ func TestAgentRunRequiresPrincipal(t *testing.T) {
 
 func TestAgentRunNoopRecordsSentinelQuery(t *testing.T) {
 	var out, errw bytes.Buffer
-	err := run(context.Background(), []string{"agent", "run", "--principal", "codex-a@project", "--runtime", "noop", "--workspace", t.TempDir()}, &out, &errw)
+	err := Run(context.Background(), []string{"agent", "run", "--principal", "codex-a@project", "--runtime", "noop", "--workspace", t.TempDir()}, &out, &errw)
 	if err != nil {
 		t.Fatalf("agent run noop: %v\nstderr=%s", err, errw.String())
 	}
@@ -78,7 +78,7 @@ func TestAgentRunNoopUsesRenderedWakeCandidate(t *testing.T) {
 		t.Fatal(err)
 	}
 	var out, errw bytes.Buffer
-	err := run(context.Background(), []string{
+	err := Run(context.Background(), []string{
 		"agent", "run",
 		"--principal", "codex-a@project",
 		"--runtime", "noop",

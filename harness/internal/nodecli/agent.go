@@ -1,4 +1,4 @@
-package main
+package nodecli
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/presentation"
 )
 
-func runAgent(ctx context.Context, args []string, out, errw io.Writer) error {
+func RunAgent(ctx context.Context, args []string, out, errw io.Writer) error {
 	if len(args) == 0 {
 		return fmt.Errorf("agent requires a subcommand")
 	}
@@ -25,24 +25,25 @@ func runAgent(ctx context.Context, args []string, out, errw io.Writer) error {
 		writeAgentHelp(errw)
 		return flag.ErrHelp
 	case "run":
-		return runAgentRun(ctx, args[1:], out, errw)
+		return Wake(ctx, args[1:], out, errw)
 	default:
 		return fmt.Errorf("unknown agent subcommand %q", args[0])
 	}
 }
 
 func writeAgentHelp(errw io.Writer) {
-	fmt.Fprintln(errw, "mnemond agent commands operate local managed-agent drive sources for one local principal.")
+	fmt.Fprintln(errw, FaceName+" wake operates the local managed-agent drive source for one local principal.")
 	fmt.Fprintln(errw)
 	fmt.Fprintln(errw, "Usage:")
-	fmt.Fprintln(errw, "  mnemond agent run [flags]")
+	fmt.Fprintln(errw, "  "+FaceName+" wake [flags]")
+	fmt.Fprintln(errw, "  mnemond agent run [flags]   (deprecated spelling, removed at S6)")
 	fmt.Fprintln(errw)
 	fmt.Fprintln(errw, "Commands:")
-	fmt.Fprintln(errw, "  run   Render local wake candidates and send only [mnemon:wake] to the selected managed runtime")
+	fmt.Fprintln(errw, "  wake   Render local wake candidates and send only [mnemon:wake] to the selected managed runtime")
 }
 
-func runAgentRun(ctx context.Context, args []string, out, errw io.Writer) error {
-	fs := flag.NewFlagSet("mnemond agent run", flag.ContinueOnError)
+func Wake(ctx context.Context, args []string, out, errw io.Writer) error {
+	fs := flag.NewFlagSet(FaceName+" wake", flag.ContinueOnError)
 	fs.SetOutput(errw)
 	principal := fs.String("principal", "", "local managed agent principal")
 	runtimeName := fs.String("runtime", "noop", "managed runtime adapter (noop or codex-appserver)")
