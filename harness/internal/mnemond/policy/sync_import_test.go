@@ -72,7 +72,7 @@ func TestEmbeddedImportableKindsAreDescriptorDerived(t *testing.T) {
 	cat := StandardRegistry()
 	wantMerge := map[contract.ResourceKind]string{
 		"agent_profile": "item-dedup", "teamwork_signal": "item-dedup",
-		"project_intent": "item-dedup", "assignment": "item-dedup", "progress_digest": "item-dedup",
+		"assignment": "item-dedup", "progress_digest": "item-dedup",
 	}
 	kinds := ImportableKinds(cat)
 	if len(kinds) != len(wantMerge) {

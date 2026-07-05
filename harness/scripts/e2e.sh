@@ -714,7 +714,7 @@ run_daemon() {
 }
 
 # run_coordination proves the AgentTeam coordination package is default-enabled (P3b): `setup --host
-# codex` with NO --loop wires a host that governs project_intent/assignment/progress_digest out of the
+# codex` with NO --loop wires a host that governs teamwork_signal/assignment/progress_digest out of the
 # box — the §3.7 row-A 普通使用者 flow. No coordination kind is named anywhere on the setup line.
 run_coordination() {
 	CUR_HOST="coordination"
@@ -736,10 +736,10 @@ run_coordination() {
 		[ "$up" = 1 ] || { cat "$WORK/run-coord.log"; exit 1; }
 		# all three coordination kinds govern (observe → admit) with no --loop having named them
 		local out
-		# project_intent + assignment are mid-risk (P3c): the candidate must carry evidence.
+		# teamwork_signal + assignment are mid-risk (P3c): the candidate must carry evidence.
 		out="$("$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
-			--type project_intent.write_candidate.observed --external-id ci1 --payload '{"narrative":{"statement":"ship the AgentTeam beta","evidence_summary":"roadmap-q3"},"refs":{"evidence_refs":["roadmap-q3"]}}')"
-		case "$out" in *ticked=true*) ;; *) echo "project_intent observe: $out"; exit 1 ;; esac
+			--type teamwork_signal.write_candidate.observed --external-id ci1 --payload '{"rule":{"scope":"project/direction","ttl":"24h"},"narrative":{"statement":"ship the AgentTeam beta","why_teamwork":"direction visible to every agent"},"refs":{"evidence_refs":["roadmap-q3"]}}')"
+		case "$out" in *ticked=true*) ;; *) echo "teamwork_signal observe: $out"; exit 1 ;; esac
 		out="$("$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
 			--type assignment.write_candidate.observed --external-id ci2 --payload '{"rule":{"scope":"fix event view","ttl":"2h","assignee":"codex@impl"},"narrative":{"expected_work":"fix event view","expected_feedback":"progress_digest with result or blocker"},"refs":{"evidence_refs":["ticket-123"]}}')"
 		case "$out" in *ticked=true*) ;; *) echo "assignment observe: $out"; exit 1 ;; esac
@@ -755,7 +755,7 @@ run_coordination() {
 		# the status FIELD section (P3d, tower seed) reports the coordination entry counts: each
 		# admitted kind has one entry (the evidence-less assignment was denied, so assignment=1 not 2).
 		out="$("$MH" control status --addr "http://$addr" --principal codex@project --token-file "$tok")"
-		case "$out" in *"Field: agent profile=0, assignment=1, progress digest=1, project intent=1, teamwork signal=0"*) ;; *) echo "status FIELD wrong: $out"; exit 1 ;; esac
+		case "$out" in *"Field: agent profile=0, assignment=1, progress digest=1, teamwork signal=1"*) ;; *) echo "status FIELD wrong: $out"; exit 1 ;; esac
 		{ kill "$runpid" 2>/dev/null; wait "$runpid"; } 2>/dev/null || true
 		rm -f "$PIDFILE"
 	) || fail "coordination flow failed (see $WORK/run-coord.log)"
@@ -817,7 +817,7 @@ run_subscription() {
 	echo "    subscription budget OK"
 }
 
-# run_tower proves the Agent Control Tower (P6): after the daemon admits a project_intent (GOAL) and
+# run_tower proves the Agent Control Tower (P6): after the daemon admits a direction signal (GOAL) and
 # an assignment (FIELD), `tower --dump` renders the four read-only pages (GOAL/FIELD/INBOX/LEDGER) with
 # the governed data. The Tower opens the store directly (cross-actor reads the per-actor channel can't
 # serve), so the daemon is stopped first (single-writer, S11). READ-ONLY: --dump never writes or Ticks.
@@ -839,9 +839,9 @@ run_tower() {
 			sleep 0.1
 		done
 		[ "$up" = 1 ] || { cat "$WORK/run-tower.log"; exit 1; }
-		# seed GOAL (project_intent, mid-risk -> needs evidence) + FIELD (assignment with lease TTL)
+		# seed GOAL (teamwork_signal, mid-risk -> needs evidence) + FIELD (assignment with lease TTL)
 		"$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
-			--type project_intent.write_candidate.observed --external-id ti1 --payload '{"narrative":{"statement":"ship the AgentTeam beta","evidence_summary":"roadmap"},"refs":{"evidence_refs":["roadmap"]}}' >/dev/null
+			--type teamwork_signal.write_candidate.observed --external-id ti1 --payload '{"rule":{"scope":"project/direction","ttl":"24h"},"narrative":{"statement":"ship the AgentTeam beta","why_teamwork":"direction visible to every agent"},"refs":{"evidence_refs":["roadmap"]}}' >/dev/null
 		"$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
 			--type assignment.write_candidate.observed --external-id ta1 --payload '{"rule":{"scope":"fix event view","ttl":"2h","assignee":"codex@impl"},"narrative":{"expected_work":"fix event view","expected_feedback":"progress_digest with result or blocker"},"refs":{"evidence_refs":["ticket"]}}' >/dev/null
 		# stop the daemon so the Tower can open the store (single-writer, S11)
@@ -853,7 +853,7 @@ run_tower() {
 		for title in "# GOAL" "# FIELD" "# INBOX" "# LEDGER"; do
 			case "$out" in *"$title"*) ;; *) echo "tower missing page $title:"; echo "$out"; exit 1 ;; esac
 		done
-		case "$out" in *"ship the AgentTeam beta"*) ;; *) echo "tower GOAL missing the project intent:"; echo "$out"; exit 1 ;; esac
+		case "$out" in *"ship the AgentTeam beta"*) ;; *) echo "tower GOAL missing the direction signal:"; echo "$out"; exit 1 ;; esac
 		case "$out" in *"fix event view"*) ;; *) echo "tower FIELD missing the assignment:"; echo "$out"; exit 1 ;; esac
 		case "$out" in *"codex@project"*) ;; *) echo "tower FIELD missing the agent:"; echo "$out"; exit 1 ;; esac
 	) || fail "tower flow failed (see $WORK/run-tower.log)"

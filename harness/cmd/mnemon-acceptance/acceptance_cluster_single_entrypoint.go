@@ -461,7 +461,7 @@ func addR1ClusterAuditAssertions(report *r1CodexAcceptanceReport, syncReport *r1
 	addR1Assertion(report, "cluster runner wakes every non-entrypoint through generic prompt", report.RunnerContract != nil && r1ClusterWokeAllNonEntrypoints(report.RunnerContract, report.Agents, entrypoint), fmt.Sprintf("worker_wake_prompts=%d agents=%d entrypoint=%s", report.RunnerContract.WorkerWakePrompts, len(report.Agents), entrypoint))
 	addR1Assertion(report, "cluster at least three hostagents participate through accepted events", nonProfileParticipants >= 3, fmt.Sprintf("participants=%d actor_counts=%v", nonProfileParticipants, actorCounts))
 	addR1Assertion(report, "cluster entrypoint emits coordination events", actorCounts[entrypoint]["teamwork_signal"] >= 1 && actorCounts[entrypoint]["assignment"] >= 2, fmt.Sprintf("entrypoint=%s counts=%v", entrypoint, actorCounts[entrypoint]))
-	addR1Assertion(report, "cluster entrypoint records project intent or integration progress", actorCounts[entrypoint]["project_intent"] >= 1 || actorCounts[entrypoint]["progress_digest"] >= 1, fmt.Sprintf("entrypoint=%s counts=%v", entrypoint, actorCounts[entrypoint]))
+	addR1Assertion(report, "cluster entrypoint records direction signal or integration progress", actorCounts[entrypoint]["teamwork_signal"] >= 1 || actorCounts[entrypoint]["progress_digest"] >= 1, fmt.Sprintf("entrypoint=%s counts=%v", entrypoint, actorCounts[entrypoint]))
 	addR1Assertion(report, "cluster entrypoint records final integration progress", report.RunnerContract.EntrypointProgressBeforeIntegration >= 0 && report.RunnerContract.EntrypointProgressAfterIntegration > report.RunnerContract.EntrypointProgressBeforeIntegration, fmt.Sprintf("entrypoint_progress_before=%d after=%d", report.RunnerContract.EntrypointProgressBeforeIntegration, report.RunnerContract.EntrypointProgressAfterIntegration))
 	addR1Assertion(report, "cluster workers act because of Mnemon context", len(workerProgress) >= 2 && report.RunnerContract.DirectWorkerBusinessPrompts == 0, fmt.Sprintf("worker_progress_actors=%v", workerProgress))
 	addR1Assertion(report, "cluster at least two non-entrypoint progress_digest actors", len(workerProgress) >= 2, fmt.Sprintf("worker_progress_actors=%v", workerProgress))
@@ -494,7 +494,7 @@ test this repository in a realistic way:
 
 Read available agent profiles through your own Local Mnemon before assigning
 work. Choose assignees yourself from Mnemon context. Use the standard governed
-events project_intent, teamwork_signal, assignment, and progress_digest as the
+events teamwork_signal, assignment, and progress_digest as the
 durable coordination channel, following the managed GUIDE and observe skill.
 Do not message workers directly. Do not wait for worker output in this turn:
 create the coordination graph, then answer briefly with the events you recorded.` + extra
@@ -690,7 +690,7 @@ func r1ClusterParticipants(actorCounts map[string]map[string]int, entrypoint str
 		if principal == entrypoint {
 			roles = append(roles, "entrypoint")
 		}
-		if counts["project_intent"] > 0 || counts["teamwork_signal"] > 0 || counts["assignment"] > 0 {
+		if counts["teamwork_signal"] > 0 || counts["assignment"] > 0 {
 			roles = append(roles, "coordinator")
 		}
 		if counts["progress_digest"] > 0 && principal != entrypoint {

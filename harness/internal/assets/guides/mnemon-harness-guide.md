@@ -77,8 +77,7 @@ Check `"${MNEMON_HARNESS_BIN:-mnemon-harness}" loop schema --type <kind>` before
 ## Teamwork Events
 
 - Emit `agent_profile` when your role, focus, availability, constraints, or context advantages materially change.
-- Emit `project_intent` when the durable project direction, goal, or framing changes.
-- Emit `teamwork_signal` when collaboration is needed and the need should be visible to other agents.
+- Emit `teamwork_signal` when collaboration is needed, or when the durable project direction/goal changes (project intent lives as a signal).
 - Emit `assignment` when concrete work is delegated or self-assigned with expected feedback.
 - Emit `progress_digest` when a result, blocker, or important context change should be returned.
 

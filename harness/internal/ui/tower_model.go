@@ -146,7 +146,7 @@ func (m TowerModel) renderPage(p TowerPage) string {
 	switch p {
 	case PageGoal:
 		if len(m.view.Goal.Statements) == 0 {
-			b.WriteString("  (no project intent)\n")
+			b.WriteString("  (no direction signal)\n")
 		}
 		for _, s := range m.view.Goal.Statements {
 			fmt.Fprintf(&b, "  intent: %s\n", s)

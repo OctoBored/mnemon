@@ -11,7 +11,6 @@ func StandardRegistry() Registry { return cloneRegistry(standardRegistry) }
 func mustStandardRegistry() Registry {
 	packages := []EventPackage{
 		StandardAgentProfile(),
-		StandardProjectIntent(),
 		StandardTeamworkSignal(),
 		StandardAssignment(),
 		StandardProgressDigest(),
@@ -46,23 +45,6 @@ func StandardAgentProfile() EventPackage {
 		Render:         bulletListRender("# Agent Profiles", "summary"),
 		DefaultEnabled: true,
 		Risk:           "low",
-		Sync:           SyncOptions{Importable: true, Merge: "item-dedup"},
-		SyncSet:        true,
-		Source:         "standard event package",
-	})
-}
-
-func StandardProjectIntent() EventPackage {
-	return mustStandardEventPackage(eventPackageDefinition{
-		Name:           "project_intent",
-		ObservedType:   observedEventType("project_intent"),
-		ProposedType:   proposedEventType("project_intent"),
-		ResourceKind:   "project_intent",
-		ItemsField:     "items",
-		Fields:         projectIntentFields(),
-		Render:         bulletListRender("# Project Intent", "statement"),
-		DefaultEnabled: true,
-		Risk:           "mid",
 		Sync:           SyncOptions{Importable: true, Merge: "item-dedup"},
 		SyncSet:        true,
 		Source:         "standard event package",
@@ -147,18 +129,6 @@ func agentProfileFields() []FieldSpec {
 		narrativeField("summary", unsafeText()),
 		refsField("active_scopes", listStrings()),
 		refsField("recent_evidence", listStrings()),
-	}
-}
-
-func projectIntentFields() []FieldSpec {
-	return []FieldSpec{
-		ruleField("intent_id", unsafeText()),
-		ruleField("scope", unsafeText()),
-		ruleField("ttl"),
-		narrativeField("statement", unsafeText()),
-		narrativeField("evidence_summary", unsafeText()),
-		refsField("evidence_refs", listStrings()),
-		refsField("context_refs", listStrings()),
 	}
 }
 

@@ -11,7 +11,7 @@ import (
 	"github.com/mnemon-dev/mnemon/harness/internal/runtime"
 )
 
-// P3a: the AgentTeam coordination kinds (project_intent/assignment/progress_digest) are ordinary
+// P3a: the AgentTeam coordination kinds (teamwork_signal/assignment/progress_digest) are ordinary
 // declared event kinds — they govern through the SAME assembler/appendItemRule path as every other
 // event package descriptor, with no per-kind code. This pins one (assignment, which carries the
 // required `scope`) through observe → admit → resource read, plus the negative: a candidate missing
@@ -202,12 +202,12 @@ func TestCoordinationDefaultEnabled(t *testing.T) {
 	}
 }
 
-// project_intent governs through the same path — a quick admit pin so all three coordination kinds
+// teamwork_signal governs through the same path — a quick admit pin so all three coordination kinds
 // are exercised (assignment above carries the required-field negative).
 func TestCoordinationProjectIntentGoverns(t *testing.T) {
-	ref := contract.ResourceRef{Kind: "project_intent", ID: "project"}
+	ref := contract.ResourceRef{Kind: "teamwork_signal", ID: "project"}
 	binding := access.HostAgentBinding("codex@project", "http://127.0.0.1:8787", []contract.ResourceRef{ref})
-	binding.AllowedObservedTypes = []string{"project_intent.write_candidate.observed"}
+	binding.AllowedObservedTypes = []string{"teamwork_signal.write_candidate.observed"}
 
 	rc, err := LocalRuntimeConfigFromBindings([]access.ChannelBinding{binding}, nil)
 	if err != nil {
@@ -220,19 +220,19 @@ func TestCoordinationProjectIntentGoverns(t *testing.T) {
 	defer rt.Close()
 	if _, _, err := rt.API().Ingest("codex@project", contract.ObservationEnvelope{
 		ExternalID: "p1",
-		Event:      contract.Event{Type: "project_intent.write_candidate.observed", Payload: r2ProjectIntent("ship the AgentTeam beta", "roadmap-q3")},
+		Event:      contract.Event{Type: "teamwork_signal.write_candidate.observed", Payload: r2DirectionSignal("ship the AgentTeam beta", "roadmap-q3")},
 	}); err != nil {
-		t.Fatalf("ingest project_intent: %v", err)
+		t.Fatalf("ingest teamwork_signal: %v", err)
 	}
 	if _, err := rt.Tick(); err != nil {
 		t.Fatalf("tick: %v", err)
 	}
 	v, fields, err := rt.Resource(ref)
 	if err != nil || v == 0 {
-		t.Fatalf("project_intent must admit (v=%d err=%v)", v, err)
+		t.Fatalf("teamwork_signal must admit (v=%d err=%v)", v, err)
 	}
 	if content, _ := fields["content"].(string); !strings.Contains(content, "ship the AgentTeam beta") {
-		t.Fatalf("project_intent content missing the statement: %q", content)
+		t.Fatalf("teamwork_signal content missing the statement: %q", content)
 	}
 }
 

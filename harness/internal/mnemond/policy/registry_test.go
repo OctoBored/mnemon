@@ -3,7 +3,7 @@ package policy
 import "testing"
 
 func TestStandardRegistryCarriesFirstPartyEventPackages(t *testing.T) {
-	for _, id := range []string{"agent_profile", "teamwork_signal", "project_intent", "assignment", "progress_digest"} {
+	for _, id := range []string{"agent_profile", "teamwork_signal", "assignment", "progress_digest"} {
 		pkg, ok := StandardRegistry()[id]
 		if !ok {
 			t.Fatalf("standard registry must carry %q", id)
@@ -19,7 +19,7 @@ func TestStandardRegistryCarriesFirstPartyEventPackages(t *testing.T) {
 			t.Fatalf("%q must NOT be first-party standard (demoted to a test/external-package fixture)", id)
 		}
 	}
-	if len(StandardRegistry()) != 5 {
-		t.Fatalf("StandardRegistry() must be {agent_profile, teamwork_signal, project_intent, assignment, progress_digest}, got %d entries", len(StandardRegistry()))
+	if len(StandardRegistry()) != 4 {
+		t.Fatalf("StandardRegistry() must be {agent_profile, teamwork_signal, assignment, progress_digest}, got %d entries", len(StandardRegistry()))
 	}
 }

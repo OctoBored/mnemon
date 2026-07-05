@@ -1053,7 +1053,6 @@ func startR1SyncHub(runRoot string, count int) (r1SyncHub, error) {
 	}
 	scopes := []contract.ResourceRef{
 		{Kind: "agent_profile", ID: "project"},
-		{Kind: "project_intent", ID: "project"},
 		{Kind: "teamwork_signal", ID: "project"},
 		{Kind: "assignment", ID: "project"},
 		{Kind: "progress_digest", ID: "project"},
@@ -1141,7 +1140,6 @@ func r1SyncEventSubjectsOnlyAccepted(labels []string) bool {
 		"agent_profile:project":   true,
 		"assignment:project":      true,
 		"progress_digest:project": true,
-		"project_intent:project":  true,
 		"teamwork_signal:project": true,
 	}
 	for _, label := range labels {
@@ -1337,7 +1335,6 @@ func waitForLedgerCount(controlURL string, agent r1CodexAgent, kind string, want
 func countR1Ledger(controlURL string, agent r1CodexAgent) map[string]int {
 	out := map[string]int{
 		"agent_profile":      0,
-		"project_intent":     0,
 		"teamwork_signal":    0,
 		"assignment":         0,
 		"progress_digest":    0,

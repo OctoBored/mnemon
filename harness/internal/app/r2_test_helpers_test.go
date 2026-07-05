@@ -26,8 +26,12 @@ func r2ProgressFor(assignmentRef, scope, summary string, evidenceRefs ...any) ma
 	)
 }
 
-func r2ProjectIntent(statement string, evidenceRefs ...any) map[string]any {
-	return eventmodel.BuildPayload(nil, map[string]any{"statement": statement}, map[string]any{"evidence_refs": evidenceRefs})
+func r2DirectionSignal(statement string, evidenceRefs ...any) map[string]any {
+	return eventmodel.BuildPayload(
+		map[string]any{"scope": "project/direction", "ttl": "24h"},
+		map[string]any{"statement": statement, "why_teamwork": "direction visible to every agent"},
+		map[string]any{"evidence_refs": evidenceRefs},
+	)
 }
 
 func r2AgentProfile(actor, focus, availability, ttl, summary string, contextAdvantages ...any) map[string]any {

@@ -62,11 +62,11 @@ type InboxRow struct {
 	CausedBy string // the triggering candidate event ID (the re-observation target, P6b)
 }
 
-// GoalPage answers "目标怎么样了": the project_intent statements (the goal) and the progress_digest
+// GoalPage answers "目标怎么样了": the teamwork_signal statements (project intent merged into signal at R4 S3) and the progress_digest
 // summaries. "readiness" is shown as the ACTUAL progress entries — a fabricated percentage would need
 // a KR data model that does not exist, and inventing one would be a new kernel concept (T1 veto).
 type GoalPage struct {
-	Statements []string // project_intent items' statements
+	Statements []string // teamwork_signal items' statements (the goal/direction)
 	Progress   []string // progress_digest items' summaries
 }
 
@@ -92,9 +92,9 @@ const towerScopeID = contract.ResourceID("project")
 // source); the ui package renders the result and never touches the store (ui↛store).
 func BuildTowerView(rt *runtime.Runtime, bindings []access.ChannelBinding) (TowerView, error) {
 	var v TowerView
-	// GOAL: project_intent statements + progress_digest summaries (read-only resource reads; an
+	// GOAL: teamwork_signal statements + progress_digest summaries (read-only resource reads; an
 	// absent resource — version 0 — simply yields no entries).
-	if ver, fields, err := rt.Resource(contract.ResourceRef{Kind: "project_intent", ID: towerScopeID}); err == nil && ver > 0 {
+	if ver, fields, err := rt.Resource(contract.ResourceRef{Kind: "teamwork_signal", ID: towerScopeID}); err == nil && ver > 0 {
 		v.Goal.Statements = towerItemStrings(fields, "items", "statement")
 	}
 	if ver, fields, err := rt.Resource(contract.ResourceRef{Kind: "progress_digest", ID: towerScopeID}); err == nil && ver > 0 {

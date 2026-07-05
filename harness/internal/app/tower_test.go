@@ -9,13 +9,13 @@ import (
 	"github.com/mnemon-dev/mnemon/harness/internal/runtime"
 )
 
-// P6a-2: the Tower facade assembles GOAL (project_intent statements) and LEDGER (accepted decisions
-// with attribution) read-only from the runtime. An admitted project_intent write shows up on both: the
+// P6a-2: the Tower facade assembles GOAL (direction-signal statements) and LEDGER (accepted decisions
+// with attribution) read-only from the runtime. An admitted direction signal shows up on both: the
 // goal statement on GOAL, the accepted decision (attributed to the proposer) on LEDGER.
 func TestBuildTowerViewGoalAndLedger(t *testing.T) {
-	piRef := contract.ResourceRef{Kind: "project_intent", ID: "project"}
+	piRef := contract.ResourceRef{Kind: "teamwork_signal", ID: "project"}
 	binding := access.HostAgentBinding("codex@project", "http://127.0.0.1:8787", []contract.ResourceRef{piRef})
-	binding.AllowedObservedTypes = []string{"project_intent.write_candidate.observed"}
+	binding.AllowedObservedTypes = []string{"teamwork_signal.write_candidate.observed"}
 	rc, err := LocalRuntimeConfigFromBindings([]access.ChannelBinding{binding}, nil)
 	if err != nil {
 		t.Fatalf("boot config: %v", err)
@@ -28,9 +28,9 @@ func TestBuildTowerViewGoalAndLedger(t *testing.T) {
 
 	if _, _, err := rt.API().Ingest("codex@project", contract.ObservationEnvelope{
 		ExternalID: "pi1",
-		Event:      contract.Event{Type: "project_intent.write_candidate.observed", Payload: r2ProjectIntent("ship the AgentTeam beta", "roadmap-q3")},
+		Event:      contract.Event{Type: "teamwork_signal.write_candidate.observed", Payload: r2TeamworkSignal("project/direction", "ship the AgentTeam beta", "direction visible to every agent", "24h", "roadmap-q3")},
 	}); err != nil {
-		t.Fatalf("ingest project_intent: %v", err)
+		t.Fatalf("ingest direction signal: %v", err)
 	}
 	if _, err := rt.Tick(); err != nil {
 		t.Fatalf("tick: %v", err)
@@ -46,20 +46,20 @@ func TestBuildTowerViewGoalAndLedger(t *testing.T) {
 		t.Fatalf("GOAL statements wrong: %+v", v.Goal.Statements)
 	}
 
-	// LEDGER: the accepted project_intent decision, attributed to the proposer, with the changed ref.
+	// LEDGER: the accepted direction-signal decision, attributed to the proposer, with the changed ref.
 	var found bool
 	for _, d := range v.Ledger.Decisions {
 		if d.Actor != "codex@project" {
 			continue
 		}
 		for _, r := range d.Refs {
-			if r.Kind == "project_intent" {
+			if r.Kind == "teamwork_signal" {
 				found = true
 			}
 		}
 	}
 	if !found {
-		t.Fatalf("LEDGER must carry the accepted project_intent decision with attribution: %+v", v.Ledger.Decisions)
+		t.Fatalf("LEDGER must carry the accepted direction-signal decision with attribution: %+v", v.Ledger.Decisions)
 	}
 }
 
