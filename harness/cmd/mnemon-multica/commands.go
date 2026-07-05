@@ -377,7 +377,14 @@ func runMulticaSurfaceReport(cmd *cobra.Command, args []string) error {
 	}
 	ctx := multicaCommandContext(cmd)
 	cli := multicaCLI()
-	comment, err := cli.AddIssueComment(ctx, plan.IssueID, plan.CommentBody)
+	// §2 redaction: the visible comment passes the forbidden-set filter even
+	// when upstream narrative carried protocol residue (belt-and-suspenders
+	// over the trimmed builder).
+	visible, redacted := multicasurface.RedactVisibleText(plan.CommentBody)
+	if redacted {
+		plan.Metadata["mnemon.redacted"] = "true"
+	}
+	comment, err := cli.AddIssueComment(ctx, plan.IssueID, visible)
 	if err != nil {
 		return err
 	}
@@ -394,11 +401,21 @@ func runMulticaSurfaceReport(cmd *cobra.Command, args []string) error {
 		SourceArtifact:      plan.Metadata[multicasurface.MulticaMetadataSourceArtifactRef],
 	}
 	if plan.Status != "" {
-		issue, err := cli.SetIssueStatus(ctx, plan.IssueID, plan.Status)
-		if err != nil {
-			return err
+		// §5 fail-closed: the assignment state comes from GetIssue, never the
+		// caller's flags; a failed lookup does not write status.
+		written, skipReason, statusErr := multicasurface.DispatchStatus(ctx, multicasurface.DispatchDeps{Client: driverDispatchClient{cli: cli}}, plan.IssueID, plan.Status)
+		if statusErr != nil {
+			return statusErr
 		}
-		report.StatusIssue = &issue
+		if skipReason != "" {
+			report.Status = ""
+			report.SkippedStatusReason = skipReason
+		} else if written != "" {
+			issue, getErr := cli.GetIssue(ctx, plan.IssueID)
+			if getErr == nil {
+				report.StatusIssue = &issue
+			}
+		}
 	}
 	if multicaJSON {
 		enc := json.NewEncoder(cmd.OutOrStdout())

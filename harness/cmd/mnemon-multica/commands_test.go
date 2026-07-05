@@ -97,6 +97,7 @@ func TestMulticaSurfaceReportWritesDisplayOnlyState(t *testing.T) {
 set -eu
 printf '%s\n' "$*" >> "$MULTICA_ARGS_PATH"
 case "$*" in
+  *"issue get iss-report"*) printf '{"id":"iss-report","status":"backlog"}\n' ;;
   *"issue comment add iss-report"*) cat > "$MULTICA_COMMENT_PATH"; printf '{"id":"comment-1","issue_id":"iss-report","content":"ok"}\n' ;;
   *"issue metadata set iss-report"*) printf '{}\n' ;;
   *"issue status iss-report done"*) printf '{"id":"iss-report","status":"done"}\n' ;;
@@ -133,10 +134,14 @@ esac
 		t.Fatalf("surface report: %v", err)
 	}
 	comment := readTestFile(t, commentPath)
-	for _, want := range []string{"Mnemon 更新: 中文进展报告", "## 摘要", "完成退款规则", "## 事件引用", "event:accepted-1"} {
+	for _, want := range []string{"Mnemon 更新: 中文进展报告", "## 摘要", "完成退款规则"} {
 		if !strings.Contains(comment, want) {
 			t.Fatalf("surface report comment missing %q:\n%s", want, comment)
 		}
+	}
+	// §2/§6: the event ref rides metadata (asserted below), never the comment.
+	if strings.Contains(comment, "event:accepted-1") {
+		t.Fatalf("visible comment leaked the event ref:\n%s", comment)
 	}
 	argsLog := readTestFile(t, argsPath)
 	for _, want := range []string{

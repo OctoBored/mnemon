@@ -485,7 +485,7 @@ func (s *runtimeRPCState) importIssue(input multicasurface.RuntimeInput, progres
 		emitRuntimeProgress(progress, "Failed to create Local Mnemon control client.")
 		return result
 	}
-	emitRuntimeProgress(progress, "Submitting issue narrative to Mnemon teamwork.")
+	emitRuntimeProgress(progress, "正在向 Mnemon 提交议题叙述。")
 	rec, err := client.IngestObserve(contract.ActorID(result.Principal), contract.ObservationEnvelope{
 		ExternalID: draft.ExternalID,
 		Event: contract.Event{
@@ -496,16 +496,16 @@ func (s *runtimeRPCState) importIssue(input multicasurface.RuntimeInput, progres
 	})
 	if err != nil {
 		result.Status = "failed"
+		// keep the raw error OFF the operator-visible face (§2): detail
+		// stays on the result for local logs, narration stays clean.
 		result.Err = fmt.Errorf("ingest Mnemon observation: %w", err)
-		emitRuntimeCommand(progress, "mnemond ingest observe --principal "+result.Principal, result.Err.Error(), 1)
-		emitRuntimeProgress(progress, "Mnemon rejected or failed the issue observation.")
+		emitRuntimeProgress(progress, "操作未完成: 治理事件提交未成功,详情见本地日志。")
 		return result
 	}
 	result.Status = "recorded"
 	result.Receipt = &rec
-	emitRuntimeCommand(progress, "mnemond ingest observe --principal "+result.Principal, fmt.Sprintf("recorded seq=%d duplicate=%v ticked=%v", rec.Seq, rec.Dup, rec.Ticked), 0)
-	emitRuntimeProgress(progress, fmt.Sprintf("Mnemon recorded the issue observation at seq=%d.", rec.Seq))
-	emitRuntimeProgress(progress, "Multica surface input was imported; accepted-state writeback is handled only by explicit Mnemon report commands.")
+	emitRuntimeProgress(progress, "已记录治理事件。")
+	emitRuntimeProgress(progress, "议题输入已导入;accepted 状态的写回仅由显式 report 路径处理。")
 	return result
 }
 

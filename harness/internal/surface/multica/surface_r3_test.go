@@ -72,9 +72,15 @@ func TestBuildDisplayWritebackPlanIsDisplaySafe(t *testing.T) {
 		t.Fatalf("display metadata mismatch: %+v", plan.Metadata)
 	}
 	if !strings.Contains(plan.CommentBody, "Mnemon 更新: 进展") ||
-		!strings.Contains(plan.CommentBody, "已确认退款风控误杀") ||
-		!strings.Contains(plan.CommentBody, "ctx:风险登记") {
+		!strings.Contains(plan.CommentBody, "已确认退款风控误杀") {
 		t.Fatalf("comment body is not a Chinese structured OA update:\n%s", plan.CommentBody)
+	}
+	// §2/§6: evidence/artifact/event refs are machine-channel only — never
+	// in the operator-visible comment.
+	for _, ref := range []string{"ctx:风险登记", "artifact:规则 diff", "event-progress-1"} {
+		if strings.Contains(plan.CommentBody, ref) {
+			t.Fatalf("visible comment leaked a machine-channel ref %q:\n%s", ref, plan.CommentBody)
+		}
 	}
 }
 

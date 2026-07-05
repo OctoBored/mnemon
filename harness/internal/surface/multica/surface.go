@@ -186,9 +186,8 @@ func FormatDisplayWritebackComment(req DisplayWritebackRequest) string {
 	writeDisplaySection(&b, "状态", req.StatusLabel)
 	writeDisplaySection(&b, "摘要", req.Summary)
 	writeDisplaySection(&b, "结果", req.Result)
-	writeDisplayList(&b, "证据", req.EvidenceRefs)
-	writeDisplayList(&b, "产物", req.ArtifactRefs)
-	writeDisplaySection(&b, "事件引用", req.Refs.EventRef)
+	// §2/§6: evidence/artifact refs and the event ref are machine-channel
+	// only — they ride metadata, never the operator-visible comment.
 	return strings.TrimSpace(b.String())
 }
 
