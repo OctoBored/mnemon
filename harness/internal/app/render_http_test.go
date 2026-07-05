@@ -48,7 +48,7 @@ func TestRenderEndpointUsesAuthenticatedScopedProjection(t *testing.T) {
 	handler := NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{
 		Now:       func() time.Time { return mustRenderHTTPTime(t, "2026-06-24T10:05:00Z") },
 		AuditSink: audit,
-	})
+	}, nil)
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
 
@@ -91,7 +91,7 @@ func TestRenderEndpointRequiresRenderVerb(t *testing.T) {
 	if err != nil {
 		t.Fatalf("binding set: %v", err)
 	}
-	srv := httptest.NewServer(NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{}))
+	srv := httptest.NewServer(NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{}, nil))
 	defer srv.Close()
 
 	body, _ := json.Marshal(presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
@@ -135,7 +135,7 @@ func TestRenderEndpointAppliesBindingBudgetWithoutReducingAuthority(t *testing.T
 	}
 	srv := httptest.NewServer(NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{
 		Now: func() time.Time { return mustRenderHTTPTime(t, "2026-06-24T10:05:00Z") },
-	}))
+	}, nil))
 	defer srv.Close()
 
 	client := access.NewClientWithToken(srv.URL, "tok")
@@ -191,7 +191,7 @@ func TestEventDataflowReachesContextPresenter(t *testing.T) {
 	}
 	srv := httptest.NewServer(NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{
 		Now: func() time.Time { return mustRenderHTTPTime(t, "2026-06-24T10:05:00Z") },
-	}))
+	}, nil))
 	defer srv.Close()
 
 	client := access.NewClientWithToken(srv.URL, "tok")

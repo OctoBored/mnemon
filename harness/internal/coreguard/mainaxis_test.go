@@ -38,6 +38,8 @@ var packageMainAxisInventory = map[string]packageMainAxis{
 	"assets":          {owner: ownerHostAgent, role: "hostagent integration and event-policy assets", target: "hostagent/assets"},
 	"codexapp":        {owner: ownerHostAgent, role: "Codex hostagent appserver adapter", target: "hostagent/codexapp"},
 	"config":          {owner: ownerMnemond, role: "mnemond local configuration", target: "mnemond/config"},
+	"blob":            {owner: ownerEvent, role: "content-addressed artifact store (R4 L1 content lane)", target: "blob"},
+	"capsule":         {owner: ownerEvent, role: "signed persistent exchange unit: records + blob closure + proof chain (R4 L1)", target: "capsule"},
 	"contract":        {owner: ownerEvent, role: "event and mnemond boundary DTOs", target: "event/contract"},
 	"coreguard":       {owner: ownerGuard, role: "architecture guard tests", target: "coreguard"},
 	"daemon":          {owner: ownerMnemond, role: "harness daemon worker supervision for local event node operation", target: "mnemond/daemon"},

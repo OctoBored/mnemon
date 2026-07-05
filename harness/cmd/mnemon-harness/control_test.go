@@ -184,7 +184,7 @@ func TestControlRenderPrintsDerivedEventPresentationBody(t *testing.T) {
 	}
 	srv := httptest.NewServer(app.NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{
 		Now: func() time.Time { return mustCmdTime(t, "2026-06-24T10:05:00Z") },
-	}))
+	}, nil))
 	defer srv.Close()
 	clientA := access.NewClientWithToken(srv.URL, "tok-a")
 	if rec, err := clientA.IngestObserve("", contract.ObservationEnvelope{

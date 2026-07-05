@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/mnemon-dev/mnemon/harness/internal/blob"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/policy"
@@ -20,8 +21,9 @@ const renderAuditRelPath = ".mnemon/harness/local/render-audit.jsonl"
 
 // NewLocalHTTPHandler adds the R1 read-only render endpoint at the app wiring layer. Runtime/channel
 // still own observe/pull/status/sync; render reads only the authenticated actor's scoped view.
-func NewLocalHTTPHandler(rt *runtime.Runtime, auth access.Authenticator, bindings *access.BindingSet, renderer presentation.Renderer) http.Handler {
+func NewLocalHTTPHandler(rt *runtime.Runtime, auth access.Authenticator, bindings *access.BindingSet, renderer presentation.Renderer, blobs *blob.Store) http.Handler {
 	mux := http.NewServeMux()
+	registerBlobHandlers(mux, auth, bindings, blobs)
 	mux.HandleFunc("/render", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
@@ -84,7 +86,15 @@ func ServeLocalHTTP(ctx context.Context, addr string, rt *runtime.Runtime, auth 
 		auditPath = filepath.Join(projectRoot, renderAuditRelPath)
 	}
 	renderer := presentation.Renderer{AuditSink: &presentation.JSONLAuditSink{Path: auditPath}}
-	srv := &http.Server{Addr: addr, Handler: NewLocalHTTPHandler(rt, auth, bindings, renderer)}
+	var blobs *blob.Store
+	if projectRoot != "" {
+		if bs, blobErr := blob.Open(filepath.Join(projectRoot, blob.DefaultDir)); blobErr == nil {
+			blobs = bs
+		} else {
+			fmt.Fprintf(out, "Local Mnemon: blob store unavailable: %v\n", blobErr)
+		}
+	}
+	srv := &http.Server{Addr: addr, Handler: NewLocalHTTPHandler(rt, auth, bindings, renderer, blobs)}
 	errc := make(chan error, 1)
 	go func() {
 		fmt.Fprintf(out, "Local Mnemon: listening on %s (store %s)\n", addr, rt.StorePath())

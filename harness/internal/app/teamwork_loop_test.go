@@ -55,7 +55,7 @@ func TestMinimalTeamworkLoopThroughRenderPresentations(t *testing.T) {
 	renderNow := mustRenderHTTPTime(t, "2026-06-24T10:05:00Z")
 	srv := httptest.NewServer(NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{
 		Now: func() time.Time { return renderNow },
-	}))
+	}, nil))
 	defer srv.Close()
 	clientA := access.NewClientWithToken(srv.URL, "tok-a")
 	clientB := access.NewClientWithToken(srv.URL, "tok-b")
