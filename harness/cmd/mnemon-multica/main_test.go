@@ -183,7 +183,7 @@ func TestRuntimeGateDoesNotStartProviderForIssueActivation(t *testing.T) {
 		Now: fixedRuntimeTime,
 	}).runTurn(multicasurface.RuntimeInput{Text: "请基于当前 issue 继续推进中文 ReAct 协作。"}, nil)
 
-	if !strings.Contains(final, "Mnemon Multica runtime handled issue") {
+	if !strings.Contains(final, "已记录并接受") && !strings.Contains(final, "已提交, 等待治理裁决") {
 		t.Fatalf("final answer = %q", final)
 	}
 	env := <-received
@@ -241,7 +241,7 @@ func TestRuntimeGateUsesTurnIssueTagBeforeStartingProvider(t *testing.T) {
 	if got := readFile(t, providerLogPath); strings.TrimSpace(got) != "" {
 		t.Fatalf("turn issue gate started provider before mnemond import:\n%s", got)
 	}
-	if !strings.Contains(out.String(), "Mnemon Multica runtime handled issue") {
+	if !strings.Contains(out.String(), "已记录并接受") && !strings.Contains(out.String(), "已提交") {
 		t.Fatalf("runtime output did not include Mnemon result:\n%s", out.String())
 	}
 }

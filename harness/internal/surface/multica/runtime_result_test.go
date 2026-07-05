@@ -14,9 +14,7 @@ func TestFormatRuntimeFinalAnswerSummarizesRuntimeOutcome(t *testing.T) {
 		Status:     "recorded",
 	})
 	for _, want := range []string{
-		"Mnemon Multica runtime handled issue TEA-1 (Runtime adapter cleanup).",
-		"Principal: planner@team.",
-		"Multica surface input: observed.",
+		"已记录并接受: Runtime adapter cleanup。",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("final answer missing %q:\n%s", want, got)
@@ -36,7 +34,7 @@ func TestRuntimeFinalAnswerCarriesFailures(t *testing.T) {
 		Err:     "ingest refused",
 	})
 	for _, want := range []string{
-		"Multica surface input: failed (ingest refused).",
+		"操作未完成",
 	} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("failure answer missing %q:\n%s", want, got)
@@ -50,7 +48,7 @@ func TestRuntimeFinalAnswerSummarizesSkippedSurfaceInput(t *testing.T) {
 		Status:  "skipped",
 		Err:     "MNEMON_CONTROL_ADDR is not set",
 	})
-	if !strings.Contains(got, "Multica surface input: skipped (MNEMON_CONTROL_ADDR is not set).") {
+	if !strings.Contains(got, "本回合未提交治理事件") {
 		t.Fatalf("skipped answer mismatch:\n%s", got)
 	}
 }

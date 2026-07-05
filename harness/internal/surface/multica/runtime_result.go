@@ -14,54 +14,43 @@ type RuntimeResultSummary struct {
 }
 
 func FormatRuntimeFinalAnswer(result RuntimeResultSummary) string {
+	// §7 裁决→RPC 映射: 终答是操作者可见文本 — 中文自然语言, 不携带
+	// principal、协议字段或 Go error 原文(细节走 metadata/本地日志)。
 	var b strings.Builder
-	if result.IssueID == "" {
-		b.WriteString("Mnemon Multica runtime did not receive a Multica issue id.")
-	} else {
-		label := strings.TrimSpace(result.Identifier)
-		if label == "" {
-			label = result.IssueID
-		}
-		b.WriteString("Mnemon Multica runtime handled issue ")
-		b.WriteString(label)
-		if title := strings.TrimSpace(result.Title); title != "" {
-			b.WriteString(" (")
-			b.WriteString(title)
-			b.WriteString(")")
-		}
-		b.WriteString(".")
+	label := strings.TrimSpace(result.Identifier)
+	if label == "" {
+		label = strings.TrimSpace(result.IssueID)
 	}
-	if principal := strings.TrimSpace(result.Principal); principal != "" {
-		b.WriteString(" Principal: ")
-		b.WriteString(principal)
-		b.WriteString(".")
-	}
-	switch result.Status {
-	case "recorded":
-		b.WriteString(" Multica surface input: observed.")
-	case "skipped":
-		b.WriteString(" Multica surface input: skipped")
-		if result.Err != "" {
-			b.WriteString(" (")
-			b.WriteString(result.Err)
-			b.WriteString(")")
-		} else {
-			b.WriteString(" because MNEMON_CONTROL_ADDR is not set")
-		}
-		b.WriteString(".")
-	case "failed":
-		b.WriteString(" Multica surface input: failed")
-		if result.Err != "" {
-			b.WriteString(" (")
-			b.WriteString(result.Err)
-			b.WriteString(")")
-		}
-		b.WriteString(".")
+	title := strings.TrimSpace(result.Title)
+	switch {
+	case label == "":
+		b.WriteString("操作未完成: 未收到 Multica issue 标识。")
 	default:
-		if result.Err != "" {
-			b.WriteString(" Multica surface input: failed (")
-			b.WriteString(result.Err)
-			b.WriteString(").")
+		switch result.Status {
+		case "recorded":
+			b.WriteString("已记录并接受: ")
+			if title != "" {
+				b.WriteString(title)
+			} else {
+				b.WriteString(label)
+			}
+			b.WriteString("。")
+		case "deferred":
+			b.WriteString("已提交, 等待治理裁决: ")
+			b.WriteString(label)
+			b.WriteString("。")
+		case "rejected":
+			b.WriteString("未被接受: ")
+			if reason := strings.TrimSpace(result.Err); reason != "" {
+				b.WriteString(reason)
+			} else {
+				b.WriteString(label)
+			}
+			b.WriteString("。")
+		case "skipped":
+			b.WriteString("本回合未提交治理事件(节点未接入)。")
+		default:
+			b.WriteString("操作未完成: 提交未成功, 详情见本地日志。")
 		}
 	}
 	return strings.TrimSpace(b.String())

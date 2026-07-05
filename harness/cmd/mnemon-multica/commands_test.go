@@ -63,7 +63,7 @@ func TestMulticaImportIssueWritesObservedDraftToLocalIngest(t *testing.T) {
 		t.Fatalf("import issue: %v", err)
 	}
 
-	if got.ExternalID != "multica-issue-iss-7" {
+	if got.ExternalID != "multica-task-iss-7" {
 		t.Fatalf("external id = %q", got.ExternalID)
 	}
 	if got.Event.Type != "teamwork_signal.write_candidate.observed" {

@@ -68,7 +68,7 @@ func TestBuildIssueTeamworkSignalDefaults(t *testing.T) {
 	if got := refs["evidence_refs"].([]string); len(got) != 1 || got[0] != "multica:issue:iss-1" {
 		t.Fatalf("default evidence refs mismatch: %+v", refs)
 	}
-	if draft.ExternalID != "multica-issue-iss-1" {
+	if draft.ExternalID != "multica-task-iss-1" {
 		t.Fatalf("default external id = %q", draft.ExternalID)
 	}
 }

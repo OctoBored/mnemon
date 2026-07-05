@@ -81,7 +81,7 @@ func BuildIssueTeamworkSignal(issue IssueSignalMaterial, opts IssueSignalOptions
 	}
 	externalID := strings.TrimSpace(opts.ExternalID)
 	if externalID == "" {
-		externalID = "multica-issue-" + issue.ID
+		externalID = "multica-task-" + issue.ID
 	}
 	return ObservedDraft{
 		EventType:  "teamwork_signal.write_candidate.observed",

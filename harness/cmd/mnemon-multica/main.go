@@ -288,14 +288,14 @@ func (s *runtimeRPCState) handle(msg rpcMessage, emit func(rpcMessage) error) er
 			if progressErr != nil {
 				return
 			}
-			if strings.TrimSpace(event.Command) != "" {
-				progressErr = emitRuntimeMessages(emit, multicasurface.RuntimeCommandExecutionMessages(s.ThreadID, s.TurnID, s.nextItemID("call"), s.CWD, multicasurface.RuntimeCommandExecutionMaterial{
-					Command:    event.Command,
-					CWD:        event.CWD,
-					Output:     event.Output,
-					ExitCode:   event.ExitCode,
-					DurationMs: event.DurationMs,
-				}, s.now()))
+			if command := strings.TrimSpace(event.Command); command != "" {
+				// §7: 合成 commandExecution 已废除 — 进度一律 agentMessage
+				// 诚实叙述, 不冒充宿主的执行项。
+				narration := "执行进度: " + command
+				if event.ExitCode != 0 {
+					narration = "操作未完成: 命令退出码非零。"
+				}
+				progressErr = emitRuntimeMessages(emit, multicasurface.RuntimeAgentMessageMessages(s.ThreadID, s.TurnID, s.nextItemID("msg"), narration, "commentary", s.now()))
 				return
 			}
 			text := strings.TrimSpace(event.Text)
