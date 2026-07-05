@@ -106,7 +106,7 @@ func TestTeamworkReportOutcomeAndAttachWire(t *testing.T) {
 		t.Fatal(err)
 	}
 	teamworkReportAttach = []string{artifact}
-	report.SetOut(os.NewFile(0, os.DevNull))
+	report.SetOut(io.Discard)
 	if err := report.RunE(report, nil); err != nil {
 		t.Fatalf("teamwork report failed: %v", err)
 	}
@@ -144,7 +144,7 @@ func TestTeamworkDialectAndControlFaceProduceSameWire(t *testing.T) {
 		resetProgressVars()
 		controlTeamworkProgressSummary = "阶段推进:契约测试已过半。"
 		controlTeamworkProgressScope = "payments/reconcile"
-		cmd.SetOut(os.NewFile(0, os.DevNull))
+		cmd.SetOut(io.Discard)
 		if err := cmd.RunE(cmd, nil); err != nil {
 			t.Fatalf("%s failed: %v", cmd.Name(), err)
 		}

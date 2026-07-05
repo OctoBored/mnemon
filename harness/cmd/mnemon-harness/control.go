@@ -280,14 +280,7 @@ func init() {
 	controlPullCmd.Flags().StringVar(&controlActor, "actor", "", "subscription actor (defaults to principal)")
 	controlPullCmd.Flags().BoolVar(&controlPullJSON, "json", false, "emit scoped presentation view as JSON")
 	controlStatusCmd.Flags().BoolVar(&controlStatusJSON, "json", false, "emit channel status as JSON")
-	controlRenderCmd.Flags().StringVar(&controlRenderIntent, "intent", presentation.IntentTeamworkEvents, "render intent")
-	controlRenderCmd.Flags().StringVar(&controlRenderLifecycle, "lifecycle", "remind", "host lifecycle")
-	controlRenderCmd.Flags().StringVar(&controlRenderSurface, "surface", "hook", "host surface")
-	controlRenderCmd.Flags().StringVar(&controlRenderHost, "host", envDefault("MNEMON_RENDER_HOST", ""), "host integration name")
-	controlRenderCmd.Flags().StringVar(&controlRenderSessionID, "session-id", envDefault("MNEMON_RENDER_SESSION_ID", ""), "render session scope")
-	controlRenderCmd.Flags().StringVar(&controlRenderInputID, "input-id", envDefault("MNEMON_RENDER_INPUT_ID", ""), "render input or assignment scope")
-	controlRenderCmd.Flags().IntVar(&controlRenderMaxChars, "max-chars", 6000, "maximum rendered body chars")
-	controlRenderCmd.Flags().BoolVar(&controlRenderJSON, "json", false, "emit full render response as JSON")
+	registerRenderFlags(controlRenderCmd)
 	controlCmd.AddCommand(controlObserveCmd, controlPullCmd, controlStatusCmd, controlRenderCmd, controlTeamworkCmd, controlProfileCmd)
 	controlCmd.GroupID = groupSpine
 	rootCmd.AddCommand(controlCmd)
@@ -300,6 +293,19 @@ func registerConnectionFlags(c *cobra.Command) {
 	c.Flags().StringVar(&controlPrincipal, "principal", envDefault("MNEMON_CONTROL_PRINCIPAL", ""), "authenticated principal (trusted-header transport)")
 	c.Flags().StringVar(&controlToken, "token", envDefault("MNEMON_CONTROL_TOKEN", ""), "bearer token (TokenAuthenticator transport)")
 	c.Flags().StringVar(&controlTokenFile, "token-file", envDefault("MNEMON_CONTROL_TOKEN_FILE", ""), "read the bearer token from a file (keeps tokens out of prompt-visible command lines)")
+}
+
+// registerRenderFlags binds the boundary-brief render flags shared by the v2
+// `view` verb and the deprecated `control render` face.
+func registerRenderFlags(c *cobra.Command) {
+	c.Flags().StringVar(&controlRenderIntent, "intent", presentation.IntentTeamworkEvents, "render intent")
+	c.Flags().StringVar(&controlRenderLifecycle, "lifecycle", "remind", "host lifecycle")
+	c.Flags().StringVar(&controlRenderSurface, "surface", "hook", "host surface")
+	c.Flags().StringVar(&controlRenderHost, "host", envDefault("MNEMON_RENDER_HOST", ""), "host integration name")
+	c.Flags().StringVar(&controlRenderSessionID, "session-id", envDefault("MNEMON_RENDER_SESSION_ID", ""), "render session scope")
+	c.Flags().StringVar(&controlRenderInputID, "input-id", envDefault("MNEMON_RENDER_INPUT_ID", ""), "render input or assignment scope")
+	c.Flags().IntVar(&controlRenderMaxChars, "max-chars", 6000, "maximum rendered body chars")
+	c.Flags().BoolVar(&controlRenderJSON, "json", false, "emit full render response as JSON")
 }
 
 func envDefault(key, fallback string) string {
