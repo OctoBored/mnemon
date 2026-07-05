@@ -28,15 +28,6 @@ func (teamworkEventsPresenter) Present(req Request, proj view.View, now time.Tim
 	return PresentationBody{Body: PresentEventEnvelopes(events), Events: events}, nil
 }
 
-type profileEventsPresenter struct{}
-
-func (profileEventsPresenter) Intent() string { return IntentProfileEvents }
-
-func (profileEventsPresenter) Present(req Request, proj view.View, _ time.Time) (PresentationBody, error) {
-	events := DeriveProfileEventEnvelopes(req, proj)
-	return PresentationBody{Body: PresentEventEnvelopes(events), Events: events}, nil
-}
-
 func DeriveEventEnvelopes(req Request, proj view.View, now time.Time) []eventmodel.EventEnvelope {
 	principal := string(req.Principal)
 	if principal == "" {
@@ -210,15 +201,8 @@ func multicaRefMatchesScope(ref, sessionID, currentID string) bool {
 	return false
 }
 
-func DeriveProfileEventEnvelopes(req Request, proj view.View) []eventmodel.EventEnvelope {
-	events := DeriveEventEnvelopes(req, proj, time.Time{})
-	var profile []eventmodel.EventEnvelope
-	for _, event := range events {
-		if event.Event.Type == DerivedEventProfileUpdateRequested {
-			profile = append(profile, event)
-		}
-	}
-	return profile
+func section(kind, body string) string {
+	return "[mnemon:" + kind + "]\n" + body
 }
 
 func PresentEventEnvelopes(events []eventmodel.EventEnvelope) string {
@@ -260,8 +244,6 @@ func shouldRenderProfileCue(req Request, items map[string][]map[string]any, prin
 		return false
 	}
 	switch req.RenderIntent {
-	case IntentProfileEvents:
-		return true
 	case IntentTeamworkEvents:
 		switch strings.TrimSpace(req.Lifecycle) {
 		case "prime", "compact":

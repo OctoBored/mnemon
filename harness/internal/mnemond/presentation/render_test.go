@@ -435,14 +435,6 @@ func TestRenderIntentsAreBounded(t *testing.T) {
 	}}
 	r := Renderer{Now: func() time.Time { return now }}
 
-	profile, err := r.RenderPresentation(context.Background(), Request{Principal: "codex-a@project", RenderIntent: IntentProfileEvents}, proj)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(profile.Body, "[mnemon:profile]") || strings.Contains(profile.Body, "[mnemon:signal]") {
-		t.Fatalf("profile.events must render only profile presentation:\n%s", profile.Body)
-	}
-
 	packet, err := r.RenderPresentation(context.Background(), Request{Principal: "codex-a@project", RenderIntent: IntentContextPacket}, proj)
 	if err != nil {
 		t.Fatal(err)

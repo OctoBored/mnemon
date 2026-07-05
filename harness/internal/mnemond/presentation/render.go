@@ -23,9 +23,7 @@ const (
 )
 
 const (
-	IntentSkillBootstrap  = "skill.bootstrap"
 	IntentContextPacket   = "context.packet"
-	IntentProfileEvents   = "profile.events"
 	IntentTeamworkEvents  = "teamwork.events"
 	IntentPayloadContract = "payload.contract"
 )

@@ -39,10 +39,8 @@ func NewPresenterRegistry(presenters ...Presenter) PresenterRegistry {
 func DefaultPresenterRegistry() PresenterRegistry {
 	return NewPresenterRegistry(
 		teamworkEventsPresenter{},
-		profileEventsPresenter{},
 		contextPacketPresenter{},
 		payloadContractPresenter{},
-		skillBootstrapPresenter{},
 	)
 }
 
