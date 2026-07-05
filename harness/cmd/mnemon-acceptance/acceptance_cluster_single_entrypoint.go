@@ -376,11 +376,11 @@ func runR1ClusterSingleEntrypointAcceptance(ctx context.Context, opts r1ClusterS
 	waitForLedgerCount(entrypoint.localURL, entrypoint.r1CodexAgent, "progress_digest", 3, 30*time.Second)
 
 	if client, err := access.NewSyncClient(hub.URL, access.SyncClientConfig{Token: entrypoint.replicaToken}); err == nil {
-		syncReport.HubStatus, err = client.SyncStatus()
+		syncReport.HubStatus, err = r1HubCapsuleEvidence(client)
 		if err != nil {
 			addR1Assertion(&report, "cluster mnemonhub status readable", false, err.Error())
 		} else {
-			addR1Assertion(&report, "cluster mnemonhub exchanges accepted events", syncReport.HubStatus.HubEventsReceived > 0 && syncReport.HubStatus.HubEventsServed > 0, fmt.Sprintf("received=%d served=%d", syncReport.HubStatus.HubEventsReceived, syncReport.HubStatus.HubEventsServed))
+			addR1Assertion(&report, "cluster mnemonhub exchanges accepted events", syncReport.HubStatus.CapsulesVisible > 0, fmt.Sprintf("capsules_visible=%d", syncReport.HubStatus.CapsulesVisible))
 		}
 	} else {
 		addR1Assertion(&report, "cluster mnemonhub status readable", false, err.Error())
@@ -466,7 +466,7 @@ func addR1ClusterAuditAssertions(report *r1CodexAcceptanceReport, syncReport *r1
 	addR1Assertion(report, "cluster workers act because of Mnemon context", len(workerProgress) >= 2 && report.RunnerContract.DirectWorkerBusinessPrompts == 0, fmt.Sprintf("worker_progress_actors=%v", workerProgress))
 	addR1Assertion(report, "cluster at least two non-entrypoint progress_digest actors", len(workerProgress) >= 2, fmt.Sprintf("worker_progress_actors=%v", workerProgress))
 	addR1Assertion(report, "cluster entrypoint reads worker progress and returns integrated answer", report.LedgerCounts["progress_digest"] >= 2 && r1ClusterFinalAnswerCitesEvidence(finalAnswer), fmt.Sprintf("progress_digest=%d final=%s", report.LedgerCounts["progress_digest"], truncateR1Cluster(finalAnswer, 400)))
-	addR1Assertion(report, "cluster mnemonhub moves accepted event subjects only", r1SyncEventSubjectsOnlyAccepted(syncReport.AllowedEventSubjects) && syncReport.HubStatus.HubEventsReceived > 0 && syncReport.HubStatus.HubEventsServed > 0, fmt.Sprintf("event_subjects=%v received=%d served=%d", syncReport.AllowedEventSubjects, syncReport.HubStatus.HubEventsReceived, syncReport.HubStatus.HubEventsServed))
+	addR1Assertion(report, "cluster mnemonhub moves accepted event subjects only", r1SyncEventSubjectsOnlyAccepted(syncReport.AllowedEventSubjects) && syncReport.HubStatus.CapsulesVisible > 0, fmt.Sprintf("event_subjects=%v capsules_visible=%d", syncReport.AllowedEventSubjects, syncReport.HubStatus.CapsulesVisible))
 	addR1Assertion(report, "cluster no assignment_status/assignment_expired invented", report.LedgerCounts["assignment_status"] == 0 && report.LedgerCounts["assignment_expired"] == 0, fmt.Sprintf("assignment_status=%d assignment_expired=%d", report.LedgerCounts["assignment_status"], report.LedgerCounts["assignment_expired"]))
 	addR1Assertion(report, "cluster no manual event repair", report.RunnerContract != nil && report.RunnerContract.ManualEventWrites == 0, fmt.Sprintf("manual_event_writes=%d", report.RunnerContract.ManualEventWrites))
 	addR1Assertion(report, "cluster wake cycles bounded by runner contract", wakeCycles > 0 && report.RunnerContract.WorkerWakePrompts <= wakeCycles*(len(report.Agents)-1), fmt.Sprintf("wake_prompts=%d wake_cycles=%d agents=%d", report.RunnerContract.WorkerWakePrompts, wakeCycles, len(report.Agents)))

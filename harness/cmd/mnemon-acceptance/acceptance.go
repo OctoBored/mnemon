@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/mnemon-dev/mnemon/harness/internal/app"
+	"github.com/mnemon-dev/mnemon/harness/internal/blob"
 	"github.com/mnemon-dev/mnemon/harness/internal/codexapp"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
@@ -141,31 +142,31 @@ type r1CodexAgentReport struct {
 }
 
 type r1CodexSyncReport struct {
-	Status               string                      `json:"status"`
-	Backend              string                      `json:"backend,omitempty"`
-	Repo                 string                      `json:"repo,omitempty"`
-	TransportModel       string                      `json:"transport_model,omitempty"`
-	RosterSource         string                      `json:"roster_source,omitempty"`
-	NetworkDiscovery     string                      `json:"network_discovery,omitempty"`
-	HubURL               string                      `json:"hub_url"`
-	PublicationBranches  []string                    `json:"publication_branches,omitempty"`
-	BranchByAgent        map[string]string           `json:"branch_by_agent,omitempty"`
-	RemotePlanPaths      []string                    `json:"remote_plan_paths,omitempty"`
-	RuntimeWorkspaces    []string                    `json:"runtime_workspace_paths,omitempty"`
-	LocalStorePaths      []string                    `json:"local_mnemond_store_paths,omitempty"`
-	PublishedByBranch    map[string]int              `json:"published_events_by_branch,omitempty"`
-	ImportedByMnemond    map[string]int              `json:"imported_events_by_mnemond,omitempty"`
-	DiagnosticsByMnemond map[string]int              `json:"diagnostics_by_mnemond,omitempty"`
-	ProfileByMnemond     map[string]int              `json:"profile_events_by_mnemond,omitempty"`
-	AllowedEventSubjects []string                    `json:"allowed_event_subjects"`
-	Lifecycle            []r1SyncLifecycleReport     `json:"lifecycle,omitempty"`
-	Source               string                      `json:"source"`
-	Target               string                      `json:"target"`
-	Agents               []r1CodexAgentReport        `json:"agents"`
-	HubStatus            contract.SyncStatusResponse `json:"hub_status"`
-	SourceLedger         map[string]int              `json:"source_ledger,omitempty"`
-	TargetLedger         map[string]int              `json:"target_ledger,omitempty"`
-	Artifacts            map[string]string           `json:"artifacts,omitempty"`
+	Status               string                  `json:"status"`
+	Backend              string                  `json:"backend,omitempty"`
+	Repo                 string                  `json:"repo,omitempty"`
+	TransportModel       string                  `json:"transport_model,omitempty"`
+	RosterSource         string                  `json:"roster_source,omitempty"`
+	NetworkDiscovery     string                  `json:"network_discovery,omitempty"`
+	HubURL               string                  `json:"hub_url"`
+	PublicationBranches  []string                `json:"publication_branches,omitempty"`
+	BranchByAgent        map[string]string       `json:"branch_by_agent,omitempty"`
+	RemotePlanPaths      []string                `json:"remote_plan_paths,omitempty"`
+	RuntimeWorkspaces    []string                `json:"runtime_workspace_paths,omitempty"`
+	LocalStorePaths      []string                `json:"local_mnemond_store_paths,omitempty"`
+	PublishedByBranch    map[string]int          `json:"published_events_by_branch,omitempty"`
+	ImportedByMnemond    map[string]int          `json:"imported_events_by_mnemond,omitempty"`
+	DiagnosticsByMnemond map[string]int          `json:"diagnostics_by_mnemond,omitempty"`
+	ProfileByMnemond     map[string]int          `json:"profile_events_by_mnemond,omitempty"`
+	AllowedEventSubjects []string                `json:"allowed_event_subjects"`
+	Lifecycle            []r1SyncLifecycleReport `json:"lifecycle,omitempty"`
+	Source               string                  `json:"source"`
+	Target               string                  `json:"target"`
+	Agents               []r1CodexAgentReport    `json:"agents"`
+	HubStatus            r1HubEvidence           `json:"hub_status"`
+	SourceLedger         map[string]int          `json:"source_ledger,omitempty"`
+	TargetLedger         map[string]int          `json:"target_ledger,omitempty"`
+	Artifacts            map[string]string       `json:"artifacts,omitempty"`
 }
 
 type r1SyncLifecycleReport struct {
@@ -371,6 +372,21 @@ func runR1CodexAcceptance(ctx context.Context, opts r1CodexAcceptanceOptions) (r
 	}
 	report.Status = "failed"
 	return report, fmt.Errorf("R1 Codex acceptance failed")
+}
+
+// r1HubEvidence is the capsule-era hub occupancy evidence: how many
+// capsules this replica's grant can SEE on the hub (origin-excluded, so a
+// peer's pushes are the signal). Successor of the legacy status counters.
+type r1HubEvidence struct {
+	CapsulesVisible int `json:"capsules_visible"`
+}
+
+func r1HubCapsuleEvidence(client *access.Client) (r1HubEvidence, error) {
+	page, err := client.CapsulePull(0, 1000, "")
+	if err != nil {
+		return r1HubEvidence{}, err
+	}
+	return r1HubEvidence{CapsulesVisible: len(page.Items)}, nil
 }
 
 func installAcceptanceHarnessBinary(runRoot string) (string, error) {
@@ -1034,14 +1050,14 @@ After the command succeeds, answer "sync progress written".`, runID, assignmentI
 	}
 	client, err := access.NewSyncClient(hub.URL, access.SyncClientConfig{Token: source.replicaToken})
 	if err == nil {
-		syncReport.HubStatus, err = client.SyncStatus()
+		syncReport.HubStatus, err = r1HubCapsuleEvidence(client)
 	}
 	if err != nil {
 		addR1Assertion(report, "A14 sync arm only moves accepted event subjects, not prompts", false, err.Error())
 		return err
 	}
-	a14 := r1SyncEventSubjectsOnlyAccepted(syncReport.AllowedEventSubjects) && syncReport.HubStatus.HubEventsReceived > 0 && syncReport.HubStatus.HubEventsServed > 0 && syncReport.TargetLedger["assignment"] >= 1
-	addR1Assertion(report, "A14 sync arm only moves accepted events, not prompts", a14, fmt.Sprintf("event_subjects=%v hub_events_received=%d hub_events_served=%d target_assignment=%d", syncReport.AllowedEventSubjects, syncReport.HubStatus.HubEventsReceived, syncReport.HubStatus.HubEventsServed, syncReport.TargetLedger["assignment"]))
+	a14 := r1SyncEventSubjectsOnlyAccepted(syncReport.AllowedEventSubjects) && syncReport.HubStatus.CapsulesVisible > 0 && syncReport.TargetLedger["assignment"] >= 1
+	addR1Assertion(report, "A14 sync arm only moves accepted events, not prompts", a14, fmt.Sprintf("event_subjects=%v hub_capsules_visible=%d target_assignment=%d", syncReport.AllowedEventSubjects, syncReport.HubStatus.CapsulesVisible, syncReport.TargetLedger["assignment"]))
 	syncReport.Status = "ok"
 	return nil
 }
@@ -1086,9 +1102,14 @@ func startR1SyncHub(runRoot string, count int) (r1SyncHub, error) {
 		return r1SyncHub{}, err
 	}
 	addr := ln.Addr().String()
-	handler := mnemonhub.NewHTTPHandler(mnemonhub.New(st, grants, func() string {
+	hubBlobs, err := blob.Open(filepath.Join(hubRoot, "blobs"))
+	if err != nil {
+		st.Close()
+		return r1SyncHub{}, err
+	}
+	handler := mnemonhub.NewProtocolHandler(mnemonhub.New(st, grants, func() string {
 		return time.Now().UTC().Format(time.RFC3339)
-	}), mnemonhub.BearerAuthenticator{Tokens: tokens}, audit)
+	}), mnemonhub.BearerAuthenticator{Tokens: tokens}, hubBlobs, audit)
 	srv := &http.Server{Handler: handler}
 	errc := make(chan error, 1)
 	go func() {

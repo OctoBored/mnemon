@@ -233,10 +233,9 @@ func runR1TaskSimAcceptance(ctx context.Context, opts r1TaskSimAcceptanceOptions
 					Status: "ok",
 					Actors: []string{report.Sync.Source, report.Sync.Target},
 					Evidence: map[string]any{
-						"hub_events_received": report.Sync.HubStatus.HubEventsReceived,
-						"hub_events_served":   report.Sync.HubStatus.HubEventsServed,
-						"target_assignment":   report.Sync.TargetLedger["assignment"],
-						"source_progress":     report.Sync.SourceLedger["progress_digest"],
+						"hub_capsules_visible": report.Sync.HubStatus.CapsulesVisible,
+						"target_assignment":    report.Sync.TargetLedger["assignment"],
+						"source_progress":      report.Sync.SourceLedger["progress_digest"],
 					},
 				})
 			}

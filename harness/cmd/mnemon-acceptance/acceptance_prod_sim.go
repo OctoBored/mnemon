@@ -205,12 +205,12 @@ func runR1ProdSimAcceptance(ctx context.Context, opts r1ProdSimAcceptanceOptions
 
 	client, err := access.NewSyncClient(hub.URL, access.SyncClientConfig{Token: hub.Tokens[0]})
 	if err == nil {
-		syncReport.HubStatus, err = client.SyncStatus()
+		syncReport.HubStatus, err = r1HubCapsuleEvidence(client)
 	}
 	if err != nil {
 		addR1Assertion(&report, "prod-sim mnemonhub status readable", false, err.Error())
 	} else {
-		addR1Assertion(&report, "prod-sim mnemonhub exchanges accepted events", syncReport.HubStatus.HubEventsReceived > 0 && syncReport.HubStatus.HubEventsServed > 0, fmt.Sprintf("received=%d served=%d", syncReport.HubStatus.HubEventsReceived, syncReport.HubStatus.HubEventsServed))
+		addR1Assertion(&report, "prod-sim mnemonhub exchanges accepted events", syncReport.HubStatus.CapsulesVisible > 0, fmt.Sprintf("capsules_visible=%d", syncReport.HubStatus.CapsulesVisible))
 	}
 	if len(agents) > 0 {
 		report.LedgerCounts = countR1Ledger(agents[0].localURL, agents[0].r1CodexAgent)
