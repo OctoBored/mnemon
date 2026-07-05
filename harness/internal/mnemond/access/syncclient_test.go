@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
 )
 
 // The T2 downgrade gate (v1.1 #3): plaintext is allowed only inside the loopback boundary; a

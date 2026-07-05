@@ -47,7 +47,8 @@ func TestMulticaRuntimeDoesNotOwnManagedWakeOrDisplayWriteback(t *testing.T) {
 		// managed-runtime RPC face (everything else) still must not write
 		// back. Managed wake stays banned binary-wide: activation rides
 		// carriers, the adapter never drives agents directly.
-		dispatcherFace := filepath.Base(path) == "commands.go"
+		base := filepath.Base(path)
+		dispatcherFace := base == "commands.go" || base == "dispatch.go"
 		ast.Inspect(file, func(node ast.Node) bool {
 			switch n := node.(type) {
 			case *ast.SelectorExpr:
