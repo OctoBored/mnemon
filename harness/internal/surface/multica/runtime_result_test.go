@@ -54,9 +54,6 @@ func TestRuntimeFinalAnswerSummarizesSkippedSurfaceInput(t *testing.T) {
 }
 
 func TestRuntimeLabels(t *testing.T) {
-	if got := RuntimePrincipalLabel(""); got != "the resolved principal" {
-		t.Fatalf("empty principal label = %q", got)
-	}
 	if got := RuntimeIssueLabel("iss-1", "TEA-1", "Issue title"); got != "TEA-1 (Issue title)" {
 		t.Fatalf("issue label = %q", got)
 	}

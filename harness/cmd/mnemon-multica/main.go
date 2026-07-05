@@ -417,7 +417,7 @@ func (s *runtimeRPCState) importIssue(input multicasurface.RuntimeInput, progres
 		Principal: resolveRuntimePrincipalFromContext(s.Env, s.CWD, activation),
 		TaskID:    taskID,
 	}
-	emitRuntimeProgress(progress, "Mnemon runtime accepted the Multica task for "+multicasurface.RuntimePrincipalLabel(result.Principal)+".")
+	emitRuntimeProgress(progress, "Mnemon 运行时已受理该 Multica 任务。")
 	if issueID == "" {
 		result.Status = "skipped"
 		result.Err = fmt.Errorf("no Multica issue id was available in task environment or runtime input")

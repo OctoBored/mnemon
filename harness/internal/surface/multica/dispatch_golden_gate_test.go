@@ -225,3 +225,49 @@ func TestReservedButFailedDeliveryRetriesNotSkipped(t *testing.T) {
 }
 
 func presentationDisplayRole() string { return "display" }
+
+// commentFailOnceClient fails the first AddIssueComment, succeeds after.
+type commentFailOnceClient struct {
+	fakeMulticaClient
+	failed bool
+}
+
+func (c *commentFailOnceClient) AddIssueComment(ctx context.Context, issueID, content string) (MulticaComment, error) {
+	if !c.failed {
+		c.failed = true
+		return MulticaComment{}, fmt.Errorf("surface down")
+	}
+	return c.fakeMulticaClient.AddIssueComment(ctx, issueID, content)
+}
+
+func TestPartialFailureRetryPostsExactlyOneComment(t *testing.T) {
+	dir := t.TempDir()
+	ledger := NewFileSurfaceWriteLedger(dir + "/ledger.jsonl")
+	client := &commentFailOnceClient{}
+	deps := DispatchDeps{Client: client, Ledger: ledger, ArtifactDir: dir + "/artifacts"}
+	d := goldenDelivery()
+	d.Artifacts = nil
+
+	// attempt 1: comment fails after metadata set → error, no comment
+	if _, err := DispatchDelivery(context.Background(), deps, d, "issue-1"); err == nil {
+		t.Fatal("attempt 1 must surface the comment failure")
+	}
+	if len(client.comments) != 0 {
+		t.Fatalf("attempt 1 must not post a comment, got %d", len(client.comments))
+	}
+	// attempt 2: retries and posts exactly one comment
+	if _, err := DispatchDelivery(context.Background(), deps, d, "issue-1"); err != nil {
+		t.Fatal(err)
+	}
+	if len(client.comments) != 1 {
+		t.Fatalf("retry must post exactly one comment, got %d", len(client.comments))
+	}
+	// attempt 3: now written → skip
+	r3, err := DispatchDelivery(context.Background(), deps, d, "issue-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !r3.SkippedDuplicate || len(client.comments) != 1 {
+		t.Fatalf("third attempt must skip as duplicate, comments=%d skip=%v", len(client.comments), r3.SkippedDuplicate)
+	}
+}

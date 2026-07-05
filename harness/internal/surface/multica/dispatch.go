@@ -149,19 +149,24 @@ func DispatchDelivery(ctx context.Context, deps DispatchDeps, delivery presentat
 		result.Redacted = true
 	}
 
+	// Metadata (an idempotent set) goes FIRST so the only window between the
+	// NON-idempotent comment post and the durable ledger Record is a single
+	// local file append — a retry after a mid-write failure cannot double-post
+	// the comment (the earlier bug was comment→metadata→Record: a metadata
+	// failure stranded the reservation and the retry re-posted the comment).
+	ledgerRecord.SurfaceRef = metadata[MulticaMetadataSurfaceRef]
+	if ref, ok := metadata[MulticaMetadataSourceArtifactRef]; ok {
+		ledgerRecord.SourceArtifactRef = ref
+	}
+	if err := deps.Client.SetIssueMetadataMap(ctx, issueID, metadata); err != nil {
+		return result, fmt.Errorf("元数据未写入: %w", err)
+	}
 	comment, err := deps.Client.AddIssueComment(ctx, issueID, clean)
 	if err != nil {
 		return result, fmt.Errorf("写回未完成: %w", err)
 	}
 	result.CommentID = comment.ID
-	if err := deps.Client.SetIssueMetadataMap(ctx, issueID, metadata); err != nil {
-		return result, fmt.Errorf("元数据未写入: %w", err)
-	}
 	ledgerRecord.Status = "written"
-	ledgerRecord.SurfaceRef = metadata[MulticaMetadataSurfaceRef]
-	if ref, ok := metadata[MulticaMetadataSourceArtifactRef]; ok {
-		ledgerRecord.SourceArtifactRef = ref
-	}
 	if err := deps.Ledger.Record(ledgerRecord); err != nil {
 		return result, err
 	}

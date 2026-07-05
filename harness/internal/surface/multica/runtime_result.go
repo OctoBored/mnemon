@@ -56,14 +56,6 @@ func FormatRuntimeFinalAnswer(result RuntimeResultSummary) string {
 	return strings.TrimSpace(b.String())
 }
 
-func RuntimePrincipalLabel(principal string) string {
-	principal = strings.TrimSpace(principal)
-	if principal == "" {
-		return "the resolved principal"
-	}
-	return principal
-}
-
 func RuntimeIssueLabel(id, identifier, title string) string {
 	if strings.TrimSpace(identifier) != "" && strings.TrimSpace(title) != "" {
 		return strings.TrimSpace(identifier) + " (" + strings.TrimSpace(title) + ")"
