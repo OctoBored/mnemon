@@ -58,6 +58,8 @@ func OpenStore(path string) (*Store, error) {
 		`CREATE INDEX IF NOT EXISTS event_envelopes_correlation_idx ON event_envelopes(correlation_id, seq);`,
 		`CREATE TABLE IF NOT EXISTS outbox (id TEXT PRIMARY KEY, kind TEXT NOT NULL, event_seq INTEGER NOT NULL DEFAULT 0, target TEXT NOT NULL DEFAULT '', payload TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'pending', idempotency_key TEXT UNIQUE, attempts INTEGER NOT NULL DEFAULT 0, lease_owner TEXT NOT NULL DEFAULT '', lease_until INTEGER NOT NULL DEFAULT 0);`,
 		`CREATE TABLE IF NOT EXISTS sync_replica (id INTEGER PRIMARY KEY CHECK (id=1), replica_id TEXT NOT NULL, created_at TEXT NOT NULL);`,
+		`CREATE TABLE IF NOT EXISTS hub_capsules (hub_seq INTEGER PRIMARY KEY AUTOINCREMENT, capsule_id TEXT UNIQUE NOT NULL, producer TEXT NOT NULL, envelope TEXT NOT NULL, received_at TEXT NOT NULL);`,
+		`CREATE TABLE IF NOT EXISTS hub_rejected (seq INTEGER PRIMARY KEY AUTOINCREMENT, replica TEXT NOT NULL, capsule_id TEXT NOT NULL, code TEXT NOT NULL, detail TEXT NOT NULL, received_at TEXT NOT NULL);`,
 		`CREATE TABLE IF NOT EXISTS sync_events (origin_replica_id TEXT NOT NULL, local_decision_id TEXT NOT NULL, local_ingest_seq INTEGER NOT NULL, actor TEXT NOT NULL, correlation_id TEXT NOT NULL DEFAULT '', resource_kind TEXT NOT NULL, resource_id TEXT NOT NULL, resource_version INTEGER NOT NULL, fields_digest TEXT NOT NULL, fields TEXT NOT NULL, decided_at TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'pending', remote_peer_id TEXT NOT NULL DEFAULT '', acked_at TEXT NOT NULL DEFAULT '', diagnostic TEXT NOT NULL DEFAULT '', PRIMARY KEY(origin_replica_id, local_decision_id, resource_kind, resource_id));`,
 		`CREATE TABLE IF NOT EXISTS sync_remote_events (remote_seq INTEGER PRIMARY KEY AUTOINCREMENT, remote_peer_id TEXT NOT NULL, origin_replica_id TEXT NOT NULL, local_decision_id TEXT NOT NULL, local_ingest_seq INTEGER NOT NULL, actor TEXT NOT NULL, correlation_id TEXT NOT NULL DEFAULT '', resource_kind TEXT NOT NULL, resource_id TEXT NOT NULL, resource_version INTEGER NOT NULL, fields_digest TEXT NOT NULL, fields TEXT NOT NULL, decided_at TEXT NOT NULL DEFAULT '', received_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'accepted', diagnostic TEXT NOT NULL DEFAULT '', UNIQUE(remote_peer_id, origin_replica_id, local_decision_id));`,
 	} {
@@ -1225,4 +1227,98 @@ func digestFields(fields map[string]any) string {
 	b, _ := json.Marshal(fields)
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
+}
+
+// ---- hub capsule storage (r4-hub-protocol-v1 §7) ----
+
+type HubCapsuleRecord struct {
+	HubSeq     int64
+	CapsuleID  string
+	Producer   string
+	Envelope   string
+	ReceivedAt string
+}
+
+type HubRejectedRecord struct {
+	Seq        int64
+	Replica    string
+	CapsuleID  string
+	Code       string
+	Detail     string
+	ReceivedAt string
+}
+
+// AppendHubCapsule stores an accepted capsule once; a replay of an already
+// accepted capsule_id returns the original hub_seq with replayed=true
+// (content addressing IS the idempotency key — no separate header).
+func (s *Store) AppendHubCapsule(capsuleID, producer, envelope, receivedAt string) (int64, bool, error) {
+	var seq int64
+	err := s.db.QueryRow(`SELECT hub_seq FROM hub_capsules WHERE capsule_id=?`, capsuleID).Scan(&seq)
+	if err == nil {
+		return seq, true, nil
+	}
+	res, err := s.db.Exec(`INSERT INTO hub_capsules(capsule_id, producer, envelope, received_at) VALUES(?,?,?,?)`,
+		capsuleID, producer, envelope, receivedAt)
+	if err != nil {
+		return 0, false, err
+	}
+	seq, err = res.LastInsertId()
+	return seq, false, err
+}
+
+// HubCapsulesAfter lists accepted capsules after cursor, excluding the
+// requesting producer's own pushes (a node never pulls its own capsules).
+func (s *Store) HubCapsulesAfter(cursor int64, excludeProducer string, limit int) ([]HubCapsuleRecord, int64, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := s.db.Query(`SELECT hub_seq, capsule_id, producer, envelope, received_at FROM hub_capsules WHERE hub_seq>? AND producer<>? ORDER BY hub_seq LIMIT ?`,
+		cursor, excludeProducer, limit)
+	if err != nil {
+		return nil, cursor, err
+	}
+	defer rows.Close()
+	next := cursor
+	var out []HubCapsuleRecord
+	for rows.Next() {
+		var rec HubCapsuleRecord
+		if err := rows.Scan(&rec.HubSeq, &rec.CapsuleID, &rec.Producer, &rec.Envelope, &rec.ReceivedAt); err != nil {
+			return nil, cursor, err
+		}
+		out = append(out, rec)
+		next = rec.HubSeq
+	}
+	return out, next, rows.Err()
+}
+
+// RecordHubRejected appends one rejection row (non-terminal: the same
+// capsule_id may be re-pushed and re-adjudicated; history stays queryable).
+func (s *Store) RecordHubRejected(replica, capsuleID, code, detail, receivedAt string) error {
+	_, err := s.db.Exec(`INSERT INTO hub_rejected(replica, capsule_id, code, detail, received_at) VALUES(?,?,?,?,?)`,
+		replica, capsuleID, code, detail, receivedAt)
+	return err
+}
+
+// HubRejectedAfter lists one replica's rejection records after cursor.
+func (s *Store) HubRejectedAfter(replica string, cursor int64, limit int) ([]HubRejectedRecord, int64, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	rows, err := s.db.Query(`SELECT seq, replica, capsule_id, code, detail, received_at FROM hub_rejected WHERE replica=? AND seq>? ORDER BY seq LIMIT ?`,
+		replica, cursor, limit)
+	if err != nil {
+		return nil, cursor, err
+	}
+	defer rows.Close()
+	next := cursor
+	var out []HubRejectedRecord
+	for rows.Next() {
+		var rec HubRejectedRecord
+		if err := rows.Scan(&rec.Seq, &rec.Replica, &rec.CapsuleID, &rec.Code, &rec.Detail, &rec.ReceivedAt); err != nil {
+			return nil, cursor, err
+		}
+		out = append(out, rec)
+		next = rec.Seq
+	}
+	return out, next, rows.Err()
 }

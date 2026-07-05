@@ -304,3 +304,26 @@ func validateDocument(doc Document) error {
 	}
 	return nil
 }
+
+// DecodeEnvelope parses a raw DSSE envelope JSON document.
+func DecodeEnvelope(raw []byte) (Envelope, error) {
+	var env Envelope
+	if err := json.Unmarshal(raw, &env); err != nil {
+		return Envelope{}, fmt.Errorf("capsule: not a DSSE envelope: %w", err)
+	}
+	return env, nil
+}
+
+// DecodePayload decodes the envelope's capsule document WITHOUT verifying —
+// for read paths that already trust the store or verify separately.
+func DecodePayload(env Envelope) (Document, error) {
+	raw, err := base64.StdEncoding.DecodeString(env.Payload)
+	if err != nil {
+		return Document{}, fmt.Errorf("capsule: payload base64: %w", err)
+	}
+	var doc Document
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return Document{}, fmt.Errorf("capsule: payload document: %w", err)
+	}
+	return doc, nil
+}
