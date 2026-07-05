@@ -84,7 +84,7 @@ ISSUE_ID=""
 TASK_ID=""
 if [[ -n "$RUNTIME_ID" && -n "$AGENT_NAME" ]]; then
   TITLE="R3-1 live Multica runtime smoke ${MNEMON_R3_RUN_ID:-manual}"
-  DESCRIPTION="中文 live smoke：验证 mnemon-multica-runtime 在 Multica 中以 codex app-server 形态在线，并能通过 issue 分配触发。"
+  DESCRIPTION="中文 live smoke：验证 mnemon-multica 在 Multica 中以 codex app-server 形态在线，并能通过 issue 分配触发。"
   set +e
   multica --profile "$PROFILE" --workspace-id "$WORKSPACE_ID" issue create \
     --title "$TITLE" \

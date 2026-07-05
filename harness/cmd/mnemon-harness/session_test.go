@@ -11,7 +11,7 @@ import (
 func TestSessionStartUsesProductConfigDefaults(t *testing.T) {
 	root := t.TempDir()
 	cfg := productconfig.Default()
-	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica-runtime"}
+	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica"}
 	cfg.Sessions.PrimaryActivationCarrier = productconfig.ConnectionMultica
 	if err := productconfig.Save(productconfig.DefaultPath(root, ""), cfg); err != nil {
 		t.Fatal(err)

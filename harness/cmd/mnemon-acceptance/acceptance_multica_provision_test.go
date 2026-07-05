@@ -29,8 +29,8 @@ func TestMulticaProvisionAcceptanceBuildsHiddenHarnessBridge(t *testing.T) {
 	oldWait := acceptanceMulticaProvisionWait
 	acceptanceMulticaProvisionWorkspaceID = "ws-1"
 	acceptanceMulticaProvisionProfile = "desktop-api.multica.ai"
-	acceptanceMulticaProvisionRuntimeCommand = "mnemon-multica-runtime"
-	acceptanceMulticaProvisionRuntimePath = "/tmp/mnemon-multica-runtime"
+	acceptanceMulticaProvisionRuntimeCommand = "mnemon-multica"
+	acceptanceMulticaProvisionRuntimePath = "/tmp/mnemon-multica"
 	acceptanceMulticaProvisionWait = 3 * time.Second
 	t.Cleanup(func() {
 		acceptanceMulticaProvisionWorkspaceID = oldWorkspace
@@ -49,9 +49,9 @@ func TestMulticaProvisionAcceptanceBuildsHiddenHarnessBridge(t *testing.T) {
 		"--multica-workspace-id",
 		"ws-1",
 		"--runtime-command",
-		"mnemon-multica-runtime",
+		"mnemon-multica",
 		"--runtime-path",
-		"/tmp/mnemon-multica-runtime",
+		"/tmp/mnemon-multica",
 		"--wait",
 		"3s",
 	} {

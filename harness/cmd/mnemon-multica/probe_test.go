@@ -28,7 +28,7 @@ func TestProbeVersionRedactsEnvironmentInLog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(out.String(), "mnemon-multica-runtime") || !strings.Contains(out.String(), "probe mode") {
+	if !strings.Contains(out.String(), "mnemon-multica") || !strings.Contains(out.String(), "probe mode") {
 		t.Fatalf("version output = %q", out.String())
 	}
 	logData, err := os.ReadFile(logPath)

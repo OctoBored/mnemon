@@ -11,7 +11,7 @@ export MNEMON_R3_PHASE_STARTED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 LOG="$PHASE_DIR/go-test.log"
 cd "$MNEMON_R3_ROOT"
 set +e
-go test -v ./harness/cmd/mnemon-multica-runtime -run 'TestRuntime(ProxiesProviderAppServerWhenNoIssueGateIsPresent|GateDoesNotStartProviderForIssueActivation|GateUsesTurnIssueTagBeforeStartingProvider|ProviderCommandDefaultsToCodexJSONRPC)$' >"$LOG" 2>&1
+go test -v ./harness/cmd/mnemon-multica -run 'TestRuntime(ProxiesProviderAppServerWhenNoIssueGateIsPresent|GateDoesNotStartProviderForIssueActivation|GateUsesTurnIssueTagBeforeStartingProvider|ProviderCommandDefaultsToCodexJSONRPC)$' >"$LOG" 2>&1
 STATUS=$?
 set -e
 

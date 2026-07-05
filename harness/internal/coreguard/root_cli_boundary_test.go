@@ -20,7 +20,7 @@ var rootCLIForbiddenCommands = map[string]bool{
 	"mnemon-acceptance":        true,
 	"mnemon-harness":           true,
 	"mnemon-hub":               true,
-	"mnemon-multica-runtime":   true,
+	"mnemon-multica":           true,
 	"mnemon-runtime-multica":   true,
 	"mnemonhub":                true,
 	"multica":                  true,
@@ -32,7 +32,7 @@ var rootCLIForbiddenSurfaceStrings = []string{
 	"mnemon-acceptance",
 	"mnemon-harness",
 	"mnemon-hub",
-	"mnemon-multica-runtime",
+	"mnemon-multica",
 	"mnemon-runtime-multica",
 	"mnemonhub",
 	"multica-runtime-prod-sim",
@@ -121,7 +121,7 @@ func TestRootCLIBoundaryGuardLogicIsNotVacuous(t *testing.T) {
 			t.Fatalf("root CLI boundary guard must forbid %q", command)
 		}
 	}
-	for _, surface := range []string{"mnemond", "mnemon-harness", "mnemon-multica-runtime"} {
+	for _, surface := range []string{"mnemond", "mnemon-harness", "mnemon-multica"} {
 		if !containsRootCLIForbiddenSurface(surface) {
 			t.Fatalf("root CLI surface guard must forbid %q", surface)
 		}

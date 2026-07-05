@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	MulticaRuntimeCommandName = "mnemon-multica-runtime"
+	MulticaRuntimeCommandName = "mnemon-multica"
 	MulticaRuntimeProfileName = "mnemon-runtime"
 )
 

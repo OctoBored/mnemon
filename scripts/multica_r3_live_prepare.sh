@@ -37,7 +37,7 @@ fi
 mkdir -p "$GOBIN"
 (cd "$PROJECT_ROOT" && go build -o "$GOBIN/mnemon-acceptance" ./harness/cmd/mnemon-acceptance)
 (cd "$PROJECT_ROOT" && go build -o "$GOBIN/mnemon-harness" ./harness/cmd/mnemon-harness)
-(cd "$PROJECT_ROOT" && go build -o "$GOBIN/mnemon-multica-runtime" ./harness/cmd/mnemon-multica-runtime)
+(cd "$PROJECT_ROOT" && go build -o "$GOBIN/mnemon-multica" ./harness/cmd/mnemon-multica)
 (cd "$PROJECT_ROOT" && go build -o "$GOBIN/mnemond" ./harness/cmd/mnemond)
 
 HARNESS_BIN="${MNEMON_HARNESS_BIN:-$GOBIN/mnemon-harness}"

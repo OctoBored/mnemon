@@ -22,7 +22,7 @@ func TestConfigRoundTrip(t *testing.T) {
 	cfg.Connections.Multica = MulticaConnection{
 		Enabled:       true,
 		Workspace:     "teamwork-grivn",
-		RuntimeBinary: "mnemon-multica-runtime",
+		RuntimeBinary: "mnemon-multica",
 	}
 	cfg.Daemon.InteractionWatchers = []string{ConnectionMultica}
 	cfg.Daemon.DisplaySurfaces = []string{ConnectionMultica}
@@ -36,7 +36,7 @@ func TestConfigRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.SchemaVersion != SchemaVersion || got.Connections.Multica.RuntimeBinary != "mnemon-multica-runtime" || len(got.Participants) != 1 {
+	if got.SchemaVersion != SchemaVersion || got.Connections.Multica.RuntimeBinary != "mnemon-multica" || len(got.Participants) != 1 {
 		t.Fatalf("config mismatch: %+v", got)
 	}
 }
@@ -245,7 +245,7 @@ func TestFromLegacyBridgesMulticaRegistry(t *testing.T) {
 	if !found {
 		t.Fatal("legacy multica registry should be found")
 	}
-	if !cfg.Connections.Multica.Enabled || cfg.Connections.Multica.Workspace != "ws-multica" || cfg.Connections.Multica.RuntimeBinary != "mnemon-multica-runtime" {
+	if !cfg.Connections.Multica.Enabled || cfg.Connections.Multica.Workspace != "ws-multica" || cfg.Connections.Multica.RuntimeBinary != "mnemon-multica" {
 		t.Fatalf("multica bridge mismatch: %+v", cfg.Connections.Multica)
 	}
 	if cfg.Sessions.PrimaryActivationCarrier != ConnectionMultica {

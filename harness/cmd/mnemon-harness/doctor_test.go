@@ -35,7 +35,7 @@ func TestDoctorReportsMissingConfigurationWithoutMutating(t *testing.T) {
 func TestDoctorReportsConfiguredProductSurface(t *testing.T) {
 	root := t.TempDir()
 	cfg := productconfig.Default()
-	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica-runtime"}
+	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica"}
 	cfg.Participants = []productconfig.Participant{{
 		Principal: "planner@team",
 		HostRuntime: productconfig.HostRuntime{

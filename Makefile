@@ -26,7 +26,7 @@ harness-build: ## Build the harness binaries (mnemon-harness, mnemond, mnemonhub
 	go build -ldflags "$(LDFLAGS)" -o mnemon-harness ./harness/cmd/mnemon-harness
 	go build -ldflags "$(LDFLAGS)" -o mnemon-hub ./harness/cmd/mnemon-hub
 	go build -ldflags "$(LDFLAGS)" -o mnemond ./harness/cmd/mnemond
-	go build -ldflags "$(LDFLAGS)" -o mnemon-multica-runtime ./harness/cmd/mnemon-multica-runtime
+	go build -ldflags "$(LDFLAGS)" -o mnemon-multica ./harness/cmd/mnemon-multica
 	go build -ldflags "$(LDFLAGS)" -o mnemon-acceptance ./harness/cmd/mnemon-acceptance
 
 # ── Install / Uninstall ─────────────────────────────────────────────

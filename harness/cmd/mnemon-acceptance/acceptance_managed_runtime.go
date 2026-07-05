@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -20,7 +19,6 @@ import (
 
 var (
 	acceptanceManagedExchange       string
-	acceptanceManagedMnemondBin     string
 	acceptanceManagedRuntimeAdapter string
 )
 
@@ -35,7 +33,6 @@ var acceptanceManagedRuntimeCmd = &cobra.Command{
 			Agents:      acceptanceAgents,
 			AgentTurns:  acceptanceAgentTurns,
 			Exchange:    acceptanceManagedExchange,
-			MnemondBin:  acceptanceManagedMnemondBin,
 			Runtime:     acceptanceManagedRuntimeAdapter,
 			TurnTimeout: acceptanceTurnTimeout,
 			Stdout:      cmd.OutOrStdout(),
@@ -61,7 +58,6 @@ func init() {
 	acceptanceManagedRuntimeCmd.Flags().IntVar(&acceptanceAgents, "agents", 5, "number of managed agent nodes")
 	acceptanceManagedRuntimeCmd.Flags().BoolVar(&acceptanceAgentTurns, "agent-turns", false, "run real managed Codex turns after the seed")
 	acceptanceManagedRuntimeCmd.Flags().StringVar(&acceptanceManagedExchange, "exchange", "mnemonhub", "exchange mode: mnemonhub")
-	acceptanceManagedRuntimeCmd.Flags().StringVar(&acceptanceManagedMnemondBin, "mnemond-bin", "mnemond", "mnemond binary used for product-path wake checks")
 	acceptanceManagedRuntimeCmd.Flags().StringVar(&acceptanceManagedRuntimeAdapter, "runtime", "codex-appserver", "managed runtime adapter: codex-appserver or noop")
 	acceptanceManagedRuntimeCmd.Flags().DurationVar(&acceptanceTurnTimeout, "turn-timeout", 5*time.Minute, "timeout per managed wake check")
 	rootCmd.AddCommand(acceptanceManagedRuntimeCmd)
@@ -74,7 +70,6 @@ type managedRuntimeAcceptanceOptions struct {
 	Agents      int
 	AgentTurns  bool
 	Exchange    string
-	MnemondBin  string
 	Runtime     string
 	TurnTimeout time.Duration
 	Stdout      io.Writer
@@ -491,25 +486,6 @@ func managedRuntimeFailed(report managedRuntimeAcceptanceReport, err error) (man
 		return written, writeErr
 	}
 	return written, err
-}
-
-func managedRuntimeMnemondDryRunWake(ctx context.Context, opts managedRuntimeAcceptanceOptions, principal string) (string, error) {
-	timeout := opts.TurnTimeout
-	if timeout <= 0 {
-		timeout = 30 * time.Second
-	}
-	wakeCtx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-	bin := strings.TrimSpace(opts.MnemondBin)
-	if bin == "" {
-		bin = "mnemond"
-	}
-	cmd := exec.CommandContext(wakeCtx, bin, "agent", "run", "--principal", principal, "--dry-run")
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return strings.TrimSpace(string(out)), fmt.Errorf("mnemond managed wake dry-run: %w: %s", err, strings.TrimSpace(string(out)))
-	}
-	return strings.TrimSpace(string(out)), nil
 }
 
 func managedRuntimeDirectWorkerPromptCount(report managedRuntimeAcceptanceReport) int {

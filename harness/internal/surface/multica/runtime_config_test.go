@@ -69,7 +69,7 @@ func TestRuntimeContextFromActivationFallsBackToVisibleIssueTag(t *testing.T) {
 }
 
 func TestMulticaRuntimeCommandNamePinned(t *testing.T) {
-	if MulticaRuntimeCommandName != "mnemon-multica-runtime" {
+	if MulticaRuntimeCommandName != "mnemon-multica" {
 		t.Fatalf("MulticaRuntimeCommandName = %q", MulticaRuntimeCommandName)
 	}
 	if MulticaRuntimeProfileName != "mnemon-runtime" {

@@ -75,7 +75,6 @@ func TestProductHelpDoesNotExposeInternalVocabulary(t *testing.T) {
 		{"session", "--help"},
 		{"session", "start", "--help"},
 		{"session", "attach", "--help"},
-		{"multica", "--help"},
 	} {
 		got := executeRootForHelp(t, args...)
 		for _, blocked := range []string{"binding", "channel", "projection", "kernel", "runtime", "sync cursor", "token file", "control-agent", "import-issue", "project-comment", "surface-report", "activation-carrier", "provision", "participant"} {
@@ -91,12 +90,6 @@ func TestInternalCommandsStayHidden(t *testing.T) {
 		{"control"},
 		{"loop"},
 		{"local"},
-		{"multica"},
-		{"multica", "activation-carrier"},
-		{"multica", "import-issue"},
-		{"multica", "participant"},
-		{"multica", "provision"},
-		{"multica", "surface-report"},
 		{"sync"},
 		{"token"},
 		{"tower"},

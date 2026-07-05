@@ -145,7 +145,7 @@ run_child_issue() {
 - Issue: ${IDENTIFIER} ${ISSUE_ID}
 - 复用上下文: ctx:evidence-ledger, ctx:provider-contract
 - 证据产物: ${CASE_ROOT}/evidence/${slug}.md
-- 结论: 该子任务已经通过 Multica 原生 runtime 调度进入 mnemon-multica-runtime，并通过显式 surface-report 写回 OA comment/status。
+- 结论: 该子任务已经通过 Multica 原生 runtime 调度进入 mnemon-multica，并通过显式 surface-report 写回 OA comment/status。
 - 边界: 本 comment 是 display-only 写回，不触发新的 provider 执行；执行需要 activation carrier。
 
 mnemon:event=accepted:multica-live/${ISSUE_ID}/${slug}

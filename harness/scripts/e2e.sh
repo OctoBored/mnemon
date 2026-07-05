@@ -513,7 +513,8 @@ run_sync_pair() {
 	mkdir -p "$hubdir" "$tlsdir"
 
 	go build -o "$WORK/mnemon-hub" ./harness/cmd/mnemon-hub
-
+	# R4 S2: the absorbed face must behave identically — serve the hub through
+	# `mnemon-harness hub serve` while the selfsigned generator exercises the shim.
 	"$WORK/mnemon-hub" --dev-selfsigned "$tlsdir" >/dev/null
 	[ -f "$tlsdir/cert.pem" ] && [ -f "$tlsdir/key.pem" ] || fail "dev-selfsigned did not write cert/key"
 
@@ -675,24 +676,25 @@ run_daemon() {
 	CUR_HOST="daemon"
 	local proj="$WORK/proj-daemon" addr="127.0.0.1:8788"
 	mkdir -p "$proj"
-	echo "=== E2E mnemond daemon lifecycle ==="
-	go build -o "$WORK/mnemond" ./harness/cmd/mnemond
+	echo "=== E2E node daemon lifecycle (R4 face) ==="
+	go build -o "$WORK/mnemon-harness-node" ./harness/cmd/mnemon-harness
+	mnemond() { "$WORK/mnemon-harness-node" node "$@"; }
 	(
 		cd "$proj"
 		local tok=".mnemon/harness/channel/credentials/codex-project.token"
 		"$MH" setup --host codex --principal codex@project --control-url "http://$addr" >/dev/null
 
-		"$WORK/mnemond" status --root . | grep -q "stopped" || { echo "status before up must be stopped"; exit 1; }
-		"$WORK/mnemond" up --root . --addr "$addr" >"$WORK/daemon-up.log" 2>&1 \
+		mnemond status --root . | grep -q "stopped" || { echo "status before up must be stopped"; exit 1; }
+		mnemond up --root . --addr "$addr" >"$WORK/daemon-up.log" 2>&1 \
 			|| { echo "mnemond up failed"; cat "$WORK/daemon-up.log"; exit 1; }
 		# register the detached pid for the cleanup trap (own session, not a $WORK-tracked child)
 		cp .mnemon/harness/local/mnemond.pid "$WORK/daemon.pid" 2>/dev/null || true
-		"$WORK/mnemond" status --root . | grep -q "running" \
-			|| { echo "status after up must be running"; "$WORK/mnemond" logs --root .; exit 1; }
-		"$WORK/mnemond" logs --root . | grep -q "Local Mnemon: ready" \
+		mnemond status --root . | grep -q "running" \
+			|| { echo "status after up must be running"; mnemond logs --root .; exit 1; }
+		mnemond logs --root . | grep -q "Local Mnemon: ready" \
 			|| { echo "logs must show the serve banner"; exit 1; }
 		# a second up over a live daemon must refuse
-		if "$WORK/mnemond" up --root . --addr "$addr" >/dev/null 2>&1; then
+		if mnemond up --root . --addr "$addr" >/dev/null 2>&1; then
 			echo "a second up over a live daemon must refuse"; exit 1
 		fi
 
@@ -703,8 +705,8 @@ run_daemon() {
 			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"daemon governs this"}}')"
 		case "$out" in *ticked=true*) ;; *) echo "daemon observe: $out"; exit 1 ;; esac
 
-		"$WORK/mnemond" down --root . >/dev/null || { echo "mnemond down failed"; exit 1; }
-		"$WORK/mnemond" status --root . | grep -q "stopped" || { echo "status after down must be stopped"; exit 1; }
+		mnemond down --root . >/dev/null || { echo "mnemond down failed"; exit 1; }
+		mnemond status --root . | grep -q "stopped" || { echo "status after down must be stopped"; exit 1; }
 		[ ! -f .mnemon/harness/local/mnemond.pid ] || { echo "down must remove the pidfile"; exit 1; }
 	) || fail "daemon lifecycle failed (see $WORK/daemon-up.log)"
 	rm -f "$WORK/daemon.pid"

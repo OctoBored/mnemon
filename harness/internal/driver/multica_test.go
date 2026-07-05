@@ -315,7 +315,7 @@ func TestMulticaCLIProvisioningCommandsUseExpectedShapes(t *testing.T) {
 	script := `#!/usr/bin/env sh
 printf '%s\n' "$*" > "$MULTICA_ARGS_PATH"
 case "$*" in
-  *"runtime profile create"*) printf '{"id":"profile-1","display_name":"Mnemon","command_name":"mnemon-multica-runtime","protocol_family":"codex","enabled":true,"visibility":"workspace","workspace_id":"ws-1"}\n' ;;
+  *"runtime profile create"*) printf '{"id":"profile-1","display_name":"Mnemon","command_name":"mnemon-multica","protocol_family":"codex","enabled":true,"visibility":"workspace","workspace_id":"ws-1"}\n' ;;
   *"runtime list"*) printf '[{"id":"runtime-1","name":"Mnemon (Mac)","provider":"codex","status":"online","profile_id":"profile-1","workspace_id":"ws-1"}]\n' ;;
   *"agent create"*) printf '{"id":"agent-1","name":"mnemon-planner","runtime_id":"runtime-1","status":"idle","visibility":"private","workspace_id":"ws-1"}\n' ;;
   *) printf '{}\n' ;;
@@ -336,7 +336,7 @@ esac
 		DisplayName:    "Mnemon",
 		Description:    "Mnemon runtime",
 		ProtocolFamily: "codex",
-		CommandName:    "mnemon-multica-runtime",
+		CommandName:    "mnemon-multica",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -349,7 +349,7 @@ esac
 		"--profile desktop-api.multica.ai --workspace-id ws-1 runtime profile create",
 		"--display-name Mnemon",
 		"--protocol-family codex",
-		"--command-name mnemon-multica-runtime",
+		"--command-name mnemon-multica",
 		"--output json",
 	} {
 		if !strings.Contains(args, want) {

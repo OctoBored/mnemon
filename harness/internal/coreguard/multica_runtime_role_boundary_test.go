@@ -22,7 +22,7 @@ var multicaRuntimeSurfaceForbiddenImports = []string{
 }
 
 func TestMulticaRuntimeDoesNotOwnManagedWakeOrDisplayWriteback(t *testing.T) {
-	root := filepath.Join("..", "..", "cmd", "mnemon-multica-runtime")
+	root := filepath.Join("..", "..", "cmd", "mnemon-multica")
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -41,16 +41,27 @@ func TestMulticaRuntimeDoesNotOwnManagedWakeOrDisplayWriteback(t *testing.T) {
 				t.Errorf("Multica runtime imports forbidden package %q; runtime may import surface input and call mnemond access, but must not own product config, state, runtime core, or hub exchange", importPath)
 			}
 		}
+		// R4 S2: the adapter binary hosts two roles. The dispatcher face
+		// (commands.go — surface-report/activation-carrier/provision) OWNS
+		// deterministic display writeback per the adapter contract; the
+		// managed-runtime RPC face (everything else) still must not write
+		// back. Managed wake stays banned binary-wide: activation rides
+		// carriers, the adapter never drives agents directly.
+		dispatcherFace := filepath.Base(path) == "commands.go"
 		ast.Inspect(file, func(node ast.Node) bool {
 			switch n := node.(type) {
 			case *ast.SelectorExpr:
 				switch n.Sel.Name {
-				case "Wake", "SetIssueStatus", "AssignIssue", "AddIssueComment", "SetIssueMetadata", "SetIssueMetadataMap":
-					t.Errorf("Multica runtime calls %s at %s; R3 runtime input import must not own managed wake or display writeback", n.Sel.Name, fset.Position(n.Pos()))
+				case "Wake":
+					t.Errorf("Multica adapter calls Wake at %s; managed wake belongs to mnemond-managed source", fset.Position(n.Pos()))
+				case "SetIssueStatus", "AssignIssue", "AddIssueComment", "SetIssueMetadata", "SetIssueMetadataMap":
+					if !dispatcherFace {
+						t.Errorf("Multica runtime face calls %s at %s; display writeback belongs to the dispatcher commands only", n.Sel.Name, fset.Position(n.Pos()))
+					}
 				}
 			case *ast.CompositeLit:
 				if selectorName(n.Type) == "ManagedAgentDriver" {
-					t.Errorf("Multica runtime constructs ManagedAgentDriver at %s; managed wake belongs to mnemond-managed source", fset.Position(n.Pos()))
+					t.Errorf("Multica adapter constructs ManagedAgentDriver at %s; managed wake belongs to mnemond-managed source", fset.Position(n.Pos()))
 				}
 			}
 			return true
@@ -91,7 +102,7 @@ func TestMnemondAndMnemonHubDoNotDependOnMulticaSurface(t *testing.T) {
 }
 
 func TestMulticaRuntimeDoesNotAdvertiseRootMnemonMulticaCommands(t *testing.T) {
-	root := filepath.Join("..", "..", "cmd", "mnemon-multica-runtime")
+	root := filepath.Join("..", "..", "cmd", "mnemon-multica")
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err

@@ -74,14 +74,9 @@ type runtimeImportResult struct {
 }
 
 func main() {
-	if err := runRuntime(runtimeConfig{
-		Args:   os.Args[1:],
-		Env:    os.Environ(),
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-		Now:    time.Now,
-	}); err != nil {
+	multicaCmd.SetOut(os.Stdout)
+	multicaCmd.SetErr(os.Stderr)
+	if err := multicaCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

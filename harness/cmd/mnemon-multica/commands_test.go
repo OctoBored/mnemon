@@ -330,7 +330,7 @@ case "$*" in
   *"auth status"*) printf 'Server: https://api.multica.ai\nUser: Test\n' >&2 ;;
   *"daemon status --output json"*) printf '{"status":"running"}\n' ;;
   *"runtime profile list"*) printf '[]\n' ;;
-  *"runtime profile create"*) printf '{"id":"profile-1","display_name":"mnemon-runtime","command_name":"mnemon-multica-runtime","protocol_family":"codex","enabled":true,"workspace_id":"ws-1"}\n' ;;
+  *"runtime profile create"*) printf '{"id":"profile-1","display_name":"mnemon-runtime","command_name":"mnemon-multica","protocol_family":"codex","enabled":true,"workspace_id":"ws-1"}\n' ;;
   *"runtime profile set-path"*) printf '{}\n' ;;
   *"runtime list"*) printf '[{"id":"runtime-1","name":"Mnemon (Mac)","provider":"codex","status":"online","profile_id":"profile-1","workspace_id":"ws-1"}]\n' ;;
   *"agent list"*) printf '[]\n' ;;
@@ -361,8 +361,8 @@ esac
 	multicaProvisionRegistry = registryPath
 	multicaProvisionProjectRoot = tmp
 	multicaProvisionProfileName = "mnemon-runtime"
-	multicaProvisionRuntimeCommand = "mnemon-multica-runtime"
-	multicaProvisionRuntimePath = "/abs/mnemon-multica-runtime"
+	multicaProvisionRuntimeCommand = "mnemon-multica"
+	multicaProvisionRuntimePath = "/abs/mnemon-multica"
 	multicaProvisionAgentPrefix = "mnemon"
 	multicaProvisionRestartDaemon = false
 	multicaProvisionWait = 0
@@ -681,7 +681,7 @@ func restoreMulticaFlags(t *testing.T) {
 	multicaProvisionRegistry = ""
 	multicaProvisionProjectRoot = "."
 	multicaProvisionProfileName = "mnemon-runtime"
-	multicaProvisionRuntimeCommand = "mnemon-multica-runtime"
+	multicaProvisionRuntimeCommand = "mnemon-multica"
 	multicaProvisionRuntimePath = ""
 	multicaProvisionAgentPrefix = "mnemon"
 	multicaProvisionRestartDaemon = false

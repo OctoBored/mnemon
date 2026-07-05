@@ -53,7 +53,7 @@ var commandImportBoundaries = []commandImportBoundary{
 		rationale: "mnemon-hub is the remote event exchange backend and must not grow local runtime, hostagent, or projection behavior",
 	},
 	{
-		dir: "mnemon-multica-runtime",
+		dir: "mnemon-multica",
 		forbids: []string{
 			"harness/internal/app",
 			"harness/internal/codexapp",
@@ -66,7 +66,7 @@ var commandImportBoundaries = []commandImportBoundary{
 			"harness/internal/runtime",
 			"harness/cmd/",
 		},
-		rationale: "mnemon-multica-runtime is an external adapter; it may call mnemond access/render APIs but must not own local state, hub exchange, or product config",
+		rationale: "mnemon-multica is an external adapter; it may call mnemond access/render APIs but must not own local state, hub exchange, or product config",
 	},
 }
 
@@ -81,7 +81,7 @@ func TestCommandImportBoundaryGuardLogicIsNotVacuous(t *testing.T) {
 		t.Fatal("mnemon-hub command boundary must flag local mnemond access imports")
 	}
 	if commandImportForbidden("github.com/mnemon-dev/mnemon/harness/internal/mnemond/access", commandImportBoundaries[2].forbids) {
-		t.Fatal("mnemon-multica-runtime must be allowed to call mnemond access APIs")
+		t.Fatal("mnemon-multica must be allowed to call mnemond access APIs")
 	}
 }
 

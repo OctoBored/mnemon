@@ -86,7 +86,7 @@ func TestDaemonStatusDoesNotMutateMissingConfig(t *testing.T) {
 func TestDaemonStatusShowsConfiguredRoleSummary(t *testing.T) {
 	root := t.TempDir()
 	cfg := productconfig.Default()
-	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica-runtime"}
+	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica"}
 	cfg.Connections.Mnemonhub = productconfig.MnemonhubConnection{Enabled: true, Endpoint: "https://hub.example.invalid"}
 	cfg.Daemon.InteractionWatchers = []string{productconfig.ConnectionMultica, productconfig.ConnectionMnemonhub}
 	cfg.Daemon.DriveSources = []string{productconfig.DriveManagedLocal}
@@ -153,7 +153,7 @@ func TestDaemonStatusShowsLegacyMulticaRoleSummary(t *testing.T) {
 func TestDaemonStatusShowsWorkerSnapshot(t *testing.T) {
 	root := t.TempDir()
 	cfg := productconfig.Default()
-	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica-runtime"}
+	cfg.Connections.Multica = productconfig.MulticaConnection{Enabled: true, Workspace: "ws-multica", RuntimeBinary: "mnemon-multica"}
 	cfg.Daemon.InteractionWatchers = []string{productconfig.ConnectionMultica}
 	cfg.Daemon.DriveSources = []string{productconfig.DriveManagedLocal}
 	if err := productconfig.Save(productconfig.DefaultPath(root, ""), cfg); err != nil {
@@ -288,7 +288,7 @@ func TestConnectCommandsWriteProductConfig(t *testing.T) {
 	connectRoot = root
 	connectConfigPath = ""
 	connectMulticaWS = "teamwork-grivn"
-	connectMulticaRuntime = "mnemon-multica-runtime"
+	connectMulticaRuntime = "mnemon-multica"
 	connectMnemonhubURL = "https://hub.example.invalid"
 	t.Cleanup(func() {
 		connectRoot, connectConfigPath = oldRoot, oldPath
@@ -308,7 +308,7 @@ func TestConnectCommandsWriteProductConfig(t *testing.T) {
 	if !cfg.Connections.Multica.Enabled || cfg.Connections.Multica.Workspace != "teamwork-grivn" {
 		t.Fatalf("multica connection not written: %+v", cfg.Connections.Multica)
 	}
-	if got := cfg.Connections.Multica.RuntimeBinary; got != "mnemon-multica-runtime" {
+	if got := cfg.Connections.Multica.RuntimeBinary; got != "mnemon-multica" {
 		t.Fatalf("unexpected runtime binary: %q", got)
 	}
 	if !cfg.Connections.Mnemonhub.Enabled || cfg.Connections.Mnemonhub.Endpoint != "https://hub.example.invalid" {
