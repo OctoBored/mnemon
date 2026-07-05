@@ -66,8 +66,9 @@ var controlTeamworkCmd = &cobra.Command{
 }
 
 var controlTeamworkSignalCmd = &cobra.Command{
-	Use:   "signal",
-	Short: "Emit a teamwork_signal event without hand-writing nested JSON",
+	Use:        "signal",
+	Short:      "Emit a teamwork_signal event without hand-writing nested JSON",
+	Deprecated: "use `mnemon-harness teamwork signal` (R4 dialect face; this stub is removed at S6)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireShortFields(map[string]string{
 			"--scope":        controlTeamworkSignalScope,
@@ -101,8 +102,9 @@ var controlTeamworkSignalCmd = &cobra.Command{
 }
 
 var controlTeamworkAssignCmd = &cobra.Command{
-	Use:   "assign",
-	Short: "Emit an assignment event without hand-writing nested JSON",
+	Use:        "assign",
+	Short:      "Emit an assignment event without hand-writing nested JSON",
+	Deprecated: "use `mnemon-harness teamwork assign` (R4 dialect face; this stub is removed at S6)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireShortFields(map[string]string{
 			"--assignee": controlTeamworkAssignAssignee,
@@ -143,8 +145,9 @@ var controlTeamworkAssignCmd = &cobra.Command{
 }
 
 var controlTeamworkProgressCmd = &cobra.Command{
-	Use:   "progress",
-	Short: "Emit a progress_digest event without hand-writing nested JSON",
+	Use:        "progress",
+	Short:      "Emit a progress_digest event without hand-writing nested JSON",
+	Deprecated: "use `mnemon-harness teamwork report` (R4 dialect face; this stub is removed at S6)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireShortFields(map[string]string{
 			"--feedback-kind": controlTeamworkProgressFeedbackKind,
@@ -177,8 +180,9 @@ var controlProfileCmd = &cobra.Command{
 }
 
 var controlProfileUpdateCmd = &cobra.Command{
-	Use:   "update",
-	Short: "Emit an agent_profile event without hand-writing nested JSON",
+	Use:        "update",
+	Short:      "Emit an agent_profile event without hand-writing nested JSON",
+	Deprecated: "use `mnemon-harness teamwork profile` (R4 dialect face; this stub is removed at S6)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireShortFields(map[string]string{
 			"--principal":    controlPrincipal,
@@ -431,54 +435,66 @@ func putStrings(m map[string]any, key string, values []string) {
 	}
 }
 
+func registerSignalFlags(c *cobra.Command) {
+	c.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
+	c.Flags().StringVar(&controlTeamworkSignalID, "signal-id", "", "optional signal id")
+	c.Flags().StringVar(&controlTeamworkSignalScope, "scope", "", "teamwork scope")
+	c.Flags().StringVar(&controlTeamworkSignalUrgency, "urgency", "normal", "signal urgency: low, normal, or high")
+	c.Flags().StringVar(&controlTeamworkSignalTTL, "ttl", "30m", "signal TTL")
+	c.Flags().StringVar(&controlTeamworkSignalStatement, "statement", "", "natural-language teamwork need")
+	c.Flags().StringVar(&controlTeamworkSignalWhy, "why-teamwork", "", "why this needs teamwork")
+	c.Flags().StringArrayVar(&controlTeamworkSignalNeeded, "needed-context", nil, "needed context; may be repeated")
+	c.Flags().StringArrayVar(&controlTeamworkSignalEvidence, "evidence", nil, "evidence reference; may be repeated")
+	c.Flags().StringArrayVar(&controlTeamworkSignalContextRefs, "context-ref", nil, "context reference; may be repeated")
+}
+
+func registerAssignFlags(c *cobra.Command) {
+	c.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
+	c.Flags().StringVar(&controlTeamworkAssignID, "assignment-id", "", "optional assignment id")
+	c.Flags().StringVar(&controlTeamworkAssignSignalRef, "signal-ref", "", "source teamwork_signal id")
+	c.Flags().StringVar(&controlTeamworkAssignAssignee, "assignee", "", "assignee principal")
+	c.Flags().StringVar(&controlTeamworkAssignScope, "scope", "", "assignment scope")
+	c.Flags().StringVar(&controlTeamworkAssignTTL, "ttl", "20m", "assignment TTL")
+	c.Flags().StringArrayVar(&controlTeamworkAssignReportOn, "report-on", nil, "field or concern to report on; may be repeated")
+	c.Flags().StringVar(&controlTeamworkAssignWork, "work", "", "natural-language expected work")
+	c.Flags().StringVar(&controlTeamworkAssignFeedback, "feedback", "progress_digest with result or blocker", "expected feedback")
+	c.Flags().StringVar(&controlTeamworkAssignRationale, "rationale", "", "assignment rationale")
+	c.Flags().StringArrayVar(&controlTeamworkAssignEvidence, "evidence", nil, "evidence reference; may be repeated")
+	c.Flags().StringArrayVar(&controlTeamworkAssignContextRefs, "context-ref", nil, "context reference; may be repeated")
+}
+
+func registerProgressFlags(c *cobra.Command) {
+	c.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
+	c.Flags().StringVar(&controlTeamworkProgressAssignmentRef, "assignment-ref", "", "assignment id this progress reports on")
+	c.Flags().StringVar(&controlTeamworkProgressScope, "scope", "", "progress scope")
+	c.Flags().StringVar(&controlTeamworkProgressFeedbackKind, "feedback-kind", "progress", "progress, result, or blocker")
+	c.Flags().StringVar(&controlTeamworkProgressSummary, "summary", "", "natural-language progress summary")
+	c.Flags().StringVar(&controlTeamworkProgressBlocker, "blocker", "", "blocker details")
+	c.Flags().StringVar(&controlTeamworkProgressResult, "result", "", "result details")
+	c.Flags().StringArrayVar(&controlTeamworkProgressChanged, "changed-context", nil, "changed context; may be repeated")
+	c.Flags().StringVar(&controlTeamworkProgressSuggestedNext, "suggested-next", "", "suggested next action")
+	c.Flags().StringArrayVar(&controlTeamworkProgressEvidence, "evidence", nil, "evidence reference; may be repeated")
+	c.Flags().StringArrayVar(&controlTeamworkProgressArtifacts, "artifact", nil, "artifact reference; may be repeated")
+}
+
+func registerProfileFlags(c *cobra.Command) {
+	c.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
+	c.Flags().StringVar(&controlProfileAvailability, "availability", "available", "available, busy, blocked, or unknown")
+	c.Flags().StringVar(&controlProfileFreshness, "freshness", "fresh", "freshness marker")
+	c.Flags().StringVar(&controlProfileTTL, "ttl", "30m", "profile TTL")
+	c.Flags().StringVar(&controlProfileFocus, "focus", "", "current focus")
+	c.Flags().StringArrayVar(&controlProfileAdvantages, "advantage", nil, "context advantage; may be repeated")
+	c.Flags().StringArrayVar(&controlProfileConstraints, "constraint", nil, "constraint; may be repeated")
+	c.Flags().StringVar(&controlProfileSummary, "summary", "", "profile summary")
+	c.Flags().StringArrayVar(&controlProfileActiveScopes, "active-scope", nil, "active scope; may be repeated")
+	c.Flags().StringArrayVar(&controlProfileRecentEvidence, "recent-evidence", nil, "recent evidence; may be repeated")
+}
+
 func init() {
-	controlTeamworkSignalCmd.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
-	controlTeamworkSignalCmd.Flags().StringVar(&controlTeamworkSignalID, "signal-id", "", "optional signal id")
-	controlTeamworkSignalCmd.Flags().StringVar(&controlTeamworkSignalScope, "scope", "", "teamwork scope")
-	controlTeamworkSignalCmd.Flags().StringVar(&controlTeamworkSignalUrgency, "urgency", "normal", "signal urgency: low, normal, or high")
-	controlTeamworkSignalCmd.Flags().StringVar(&controlTeamworkSignalTTL, "ttl", "30m", "signal TTL")
-	controlTeamworkSignalCmd.Flags().StringVar(&controlTeamworkSignalStatement, "statement", "", "natural-language teamwork need")
-	controlTeamworkSignalCmd.Flags().StringVar(&controlTeamworkSignalWhy, "why-teamwork", "", "why this needs teamwork")
-	controlTeamworkSignalCmd.Flags().StringArrayVar(&controlTeamworkSignalNeeded, "needed-context", nil, "needed context; may be repeated")
-	controlTeamworkSignalCmd.Flags().StringArrayVar(&controlTeamworkSignalEvidence, "evidence", nil, "evidence reference; may be repeated")
-	controlTeamworkSignalCmd.Flags().StringArrayVar(&controlTeamworkSignalContextRefs, "context-ref", nil, "context reference; may be repeated")
-
-	controlTeamworkAssignCmd.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignID, "assignment-id", "", "optional assignment id")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignSignalRef, "signal-ref", "", "source teamwork_signal id")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignAssignee, "assignee", "", "assignee principal")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignScope, "scope", "", "assignment scope")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignTTL, "ttl", "20m", "assignment TTL")
-	controlTeamworkAssignCmd.Flags().StringArrayVar(&controlTeamworkAssignReportOn, "report-on", nil, "field or concern to report on; may be repeated")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignWork, "work", "", "natural-language expected work")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignFeedback, "feedback", "progress_digest with result or blocker", "expected feedback")
-	controlTeamworkAssignCmd.Flags().StringVar(&controlTeamworkAssignRationale, "rationale", "", "assignment rationale")
-	controlTeamworkAssignCmd.Flags().StringArrayVar(&controlTeamworkAssignEvidence, "evidence", nil, "evidence reference; may be repeated")
-	controlTeamworkAssignCmd.Flags().StringArrayVar(&controlTeamworkAssignContextRefs, "context-ref", nil, "context reference; may be repeated")
-
-	controlTeamworkProgressCmd.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
-	controlTeamworkProgressCmd.Flags().StringVar(&controlTeamworkProgressAssignmentRef, "assignment-ref", "", "assignment id this progress reports on")
-	controlTeamworkProgressCmd.Flags().StringVar(&controlTeamworkProgressScope, "scope", "", "progress scope")
-	controlTeamworkProgressCmd.Flags().StringVar(&controlTeamworkProgressFeedbackKind, "feedback-kind", "progress", "progress, result, or blocker")
-	controlTeamworkProgressCmd.Flags().StringVar(&controlTeamworkProgressSummary, "summary", "", "natural-language progress summary")
-	controlTeamworkProgressCmd.Flags().StringVar(&controlTeamworkProgressBlocker, "blocker", "", "blocker details")
-	controlTeamworkProgressCmd.Flags().StringVar(&controlTeamworkProgressResult, "result", "", "result details")
-	controlTeamworkProgressCmd.Flags().StringArrayVar(&controlTeamworkProgressChanged, "changed-context", nil, "changed context; may be repeated")
-	controlTeamworkProgressCmd.Flags().StringVar(&controlTeamworkProgressSuggestedNext, "suggested-next", "", "suggested next action")
-	controlTeamworkProgressCmd.Flags().StringArrayVar(&controlTeamworkProgressEvidence, "evidence", nil, "evidence reference; may be repeated")
-	controlTeamworkProgressCmd.Flags().StringArrayVar(&controlTeamworkProgressArtifacts, "artifact", nil, "artifact reference; may be repeated")
-
-	controlProfileUpdateCmd.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
-	controlProfileUpdateCmd.Flags().StringVar(&controlProfileAvailability, "availability", "available", "available, busy, blocked, or unknown")
-	controlProfileUpdateCmd.Flags().StringVar(&controlProfileFreshness, "freshness", "fresh", "freshness marker")
-	controlProfileUpdateCmd.Flags().StringVar(&controlProfileTTL, "ttl", "30m", "profile TTL")
-	controlProfileUpdateCmd.Flags().StringVar(&controlProfileFocus, "focus", "", "current focus")
-	controlProfileUpdateCmd.Flags().StringArrayVar(&controlProfileAdvantages, "advantage", nil, "context advantage; may be repeated")
-	controlProfileUpdateCmd.Flags().StringArrayVar(&controlProfileConstraints, "constraint", nil, "constraint; may be repeated")
-	controlProfileUpdateCmd.Flags().StringVar(&controlProfileSummary, "summary", "", "profile summary")
-	controlProfileUpdateCmd.Flags().StringArrayVar(&controlProfileActiveScopes, "active-scope", nil, "active scope; may be repeated")
-	controlProfileUpdateCmd.Flags().StringArrayVar(&controlProfileRecentEvidence, "recent-evidence", nil, "recent evidence; may be repeated")
-
+	registerSignalFlags(controlTeamworkSignalCmd)
+	registerAssignFlags(controlTeamworkAssignCmd)
+	registerProgressFlags(controlTeamworkProgressCmd)
+	registerProfileFlags(controlProfileUpdateCmd)
 	controlTeamworkCmd.AddCommand(controlTeamworkSignalCmd, controlTeamworkAssignCmd, controlTeamworkProgressCmd)
 	controlProfileCmd.AddCommand(controlProfileUpdateCmd)
 }
