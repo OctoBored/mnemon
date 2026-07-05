@@ -20,14 +20,14 @@ func TestClaudeSettingsPreservesUserHook(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := patchClaudeSettings(settings, dir, "mnemon-memory", claudeHookOptions{Nudge: true}); err != nil {
+	if err := patchClaudeSettings(settings, dir, "mnemon-memory", "claude-code", hookSelection{Exit: true}); err != nil {
 		t.Fatalf("patch: %v", err)
 	}
 	if raw, _ := os.ReadFile(settings); !strings.Contains(string(raw), userHook) {
 		t.Fatalf("install dropped the user's own hook: %s", raw)
 	}
 
-	if err := unpatchClaudeSettings(settings, "mnemon-memory"); err != nil {
+	if err := unpatchClaudeSettings(settings, "mnemon-memory", "claude-code"); err != nil {
 		t.Fatalf("unpatch: %v", err)
 	}
 	raw, err := os.ReadFile(settings)

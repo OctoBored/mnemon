@@ -46,7 +46,7 @@ type hostManifestLoop struct {
 	Projection       map[string]any      `json:"projection"`
 	Reality          map[string]any      `json:"reality"`
 	Reconcile        map[string]any      `json:"reconcile"`
-	LifecycleMapping map[string]string   `json:"lifecycle_mapping"`
+	LifecycleMapping map[string][]string `json:"lifecycle_mapping"`
 	Surfaces         map[string]string   `json:"surfaces"`
 	Ownership        projectionOwnership `json:"ownership"`
 }

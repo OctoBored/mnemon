@@ -86,7 +86,7 @@ func RenderStandardThinHook(host, timing string) (string, error) {
 
 func hookBodyBlock(timing string) string {
 	switch timing {
-	case "prime":
+	case "enter":
 		return strings.Join([]string{
 			`if [[ -f "${GUIDE_PATH}" ]]; then`,
 			`  HOOK_BODY="$(printf '%s\n\n' "[mnemon] Mnemon integration active. Follow the loaded GUIDE to decide when to read governed context or record durable state."; cat "${GUIDE_PATH}")"`,
@@ -94,7 +94,7 @@ func hookBodyBlock(timing string) string {
 			`  HOOK_BODY="[mnemon] Mnemon GUIDE is unavailable; continue only with local context, or retry mnemon setup."`,
 			`fi`,
 		}, "\n")
-	case "remind":
+	case "mid":
 		return strings.Join([]string{
 			`HOOK_BODY="[mnemon] Evaluate whether governed context should be read before responding."`,
 			`if printf '%s' "${INPUT}" | grep -q '\[mnemon:wake\]'; then`,
@@ -103,7 +103,7 @@ func hookBodyBlock(timing string) string {
 			`    if [[ -n "${MNEMON_CONTROL_TOKEN_FILE:-}" ]]; then`,
 			`      RENDER_ARGS+=(--token-file "${MNEMON_CONTROL_TOKEN_FILE}")`,
 			`    fi`,
-			`    if RENDERED="$(cd "${PROJECT_ROOT}" && "${MNEMON_HARNESS_BIN:-mnemon-harness}" "${RENDER_ARGS[@]}" --lifecycle remind --surface hook 2>/dev/null)"; then`,
+			`    if RENDERED="$(cd "${PROJECT_ROOT}" && "${MNEMON_HARNESS_BIN:-mnemon-harness}" "${RENDER_ARGS[@]}" --lifecycle mid --surface hook 2>/dev/null)"; then`,
 			`      if [[ -n "${RENDERED}" ]]; then`,
 			`        HOOK_BODY="$(printf '%s\n\n%s' "[mnemon] Wake signal received. Current governed context:" "${RENDERED}")"`,
 			`      fi`,
@@ -111,10 +111,8 @@ func hookBodyBlock(timing string) string {
 			`  fi`,
 			`fi`,
 		}, "\n")
-	case "nudge":
-		return `HOOK_BODY="[mnemon] Evaluate whether this turn changed durable state that should be recorded."`
-	case "compact":
-		return `HOOK_BODY="[mnemon] Before compaction, preserve important durable continuity through mnemon if needed."`
+	case "exit":
+		return `HOOK_BODY="[mnemon] Context is about to close: record durable state this turn produced, and preserve important continuity through mnemon if needed."`
 	default:
 		return `HOOK_BODY="[mnemon] Evaluate whether governed context or durable state should be handled."`
 	}

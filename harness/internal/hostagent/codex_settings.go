@@ -8,33 +8,26 @@ import (
 	"strings"
 )
 
-type codexHookOptions struct {
-	Remind  bool
-	Nudge   bool
-	Compact bool
-}
-
-func patchCodexHooks(hooksPath, configDir, marker string, opts codexHookOptions) error {
+func patchCodexHooks(hooksPath, configDir, marker, host string, sel hookSelection) error {
 	data, err := loadCodexHooks(hooksPath)
 	if err != nil {
 		return err
 	}
-	removeCodexHooks(data, marker)
+	if err := removeCodexHooks(data, marker, host); err != nil {
+		return err
+	}
+	hooks, err := managedHookEvents(host, sel)
+	if err != nil {
+		return err
+	}
 	hooksDir := pathJoin(configDir, "hooks", marker)
-	addCodexHook(data, "SessionStart", pathJoin(hooksDir, "prime.sh"))
-	if opts.Remind {
-		addCodexHook(data, "UserPromptSubmit", pathJoin(hooksDir, "remind.sh"))
-	}
-	if opts.Nudge {
-		addCodexHook(data, "Stop", pathJoin(hooksDir, "nudge.sh"))
-	}
-	if opts.Compact {
-		addCodexHook(data, "PreCompact", pathJoin(hooksDir, "compact.sh"))
+	for _, hook := range hooks {
+		addCodexHook(data, hook.Event, pathJoin(hooksDir, hook.Script))
 	}
 	return writeCodexHooks(hooksPath, data)
 }
 
-func unpatchCodexHooks(hooksPath, marker string) error {
+func unpatchCodexHooks(hooksPath, marker, host string) error {
 	if _, err := os.Stat(hooksPath); os.IsNotExist(err) {
 		return nil
 	} else if err != nil {
@@ -44,7 +37,9 @@ func unpatchCodexHooks(hooksPath, marker string) error {
 	if err != nil {
 		return err
 	}
-	removeCodexHooks(data, marker)
+	if err := removeCodexHooks(data, marker, host); err != nil {
+		return err
+	}
 	return writeCodexHooks(hooksPath, data)
 }
 
@@ -87,12 +82,16 @@ func writeCodexHooks(hooksPath string, data map[string]any) error {
 	return nil
 }
 
-func removeCodexHooks(data map[string]any, marker string) {
+func removeCodexHooks(data map[string]any, marker, host string) error {
 	hooks, ok := data["hooks"].(map[string]any)
 	if !ok {
-		return
+		return nil
 	}
-	for _, event := range []string{"SessionStart", "UserPromptSubmit", "Stop", "PreCompact"} {
+	events, err := managedHostEvents(host)
+	if err != nil {
+		return err
+	}
+	for _, event := range events {
 		rawEntries, ok := hooks[event].([]any)
 		if !ok {
 			continue
@@ -112,6 +111,7 @@ func removeCodexHooks(data map[string]any, marker string) {
 	if len(hooks) == 0 {
 		data["hooks"] = map[string]any{}
 	}
+	return nil
 }
 
 // entryUsesHookPath reports whether a settings hook entry is one WE projected — matched by its command

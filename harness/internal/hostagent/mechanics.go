@@ -9,7 +9,7 @@ import (
 	"regexp"
 )
 
-var hookTimings = []string{"prime", "remind", "nudge", "compact"}
+var hookTimings = []string{"enter", "mid", "exit"}
 
 const (
 	stdinTolerant = "tolerant"

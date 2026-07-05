@@ -16,7 +16,7 @@ import (
 
 func TestRenderPresentationDeterministicDigestAndAudit(t *testing.T) {
 	now := mustTime(t, "2026-06-24T10:00:00Z")
-	req := Request{Principal: "codex-a@project", Host: "codex", Lifecycle: "remind", RenderIntent: IntentBrief}
+	req := Request{Principal: "codex-a@project", Host: "codex", Lifecycle: "mid", RenderIntent: IntentBrief}
 	proj := view.View{Ref: "proj_head", Digest: "proj_digest", Content: []view.ResourceContent{
 		content("agent_profile", "project", []any{map[string]any{"id": "p1", "actor": "codex-a@project", "freshness": "fresh", "summary": "A profile"}}),
 		content("teamwork_signal", "project", []any{map[string]any{"id": "sig1", "statement": "Need a render review"}}),
@@ -60,7 +60,7 @@ func TestRenderPresentationDeterministicDigestAndAudit(t *testing.T) {
 
 func TestTeamworkSignalPresentationCarriesContextRefs(t *testing.T) {
 	now := mustTime(t, "2026-06-24T10:00:00Z")
-	req := Request{Principal: "codex-a@project", Host: "codex", Lifecycle: "remind", RenderIntent: IntentBrief}
+	req := Request{Principal: "codex-a@project", Host: "codex", Lifecycle: "mid", RenderIntent: IntentBrief}
 	proj := view.View{Ref: "proj_signal_refs", Digest: "digest_signal_refs", Content: []view.ResourceContent{
 		content("agent_profile", "project", []any{map[string]any{"id": "p1", "actor": "codex-a@project", "freshness": "fresh", "summary": "A profile"}}),
 		content("teamwork_signal", "project", []any{map[string]any{
@@ -95,7 +95,7 @@ func TestMulticaTeamworkSignalPresentationKeepsHandoffInMnemonProtocol(t *testin
 		}}),
 	}}
 	resp, err := (Renderer{Now: func() time.Time { return now }}).RenderPresentation(context.Background(),
-		Request{Principal: "planner@team", Host: "multica", Lifecycle: "remind", RenderIntent: IntentBrief}, proj)
+		Request{Principal: "planner@team", Host: "multica", Lifecycle: "mid", RenderIntent: IntentBrief}, proj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestMulticaTeamworkSignalPresentationKeepsHandoffInMnemonProtocol(t *testin
 	}
 
 	plain, err := (Renderer{Now: func() time.Time { return now }}).RenderPresentation(context.Background(),
-		Request{Principal: "planner@team", Host: "codex", Lifecycle: "remind", RenderIntent: IntentBrief}, proj)
+		Request{Principal: "planner@team", Host: "codex", Lifecycle: "mid", RenderIntent: IntentBrief}, proj)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestMulticaTeamworkPresentationFiltersOtherSessions(t *testing.T) {
 		Request{
 			Principal:    "planner@team",
 			Host:         "multica",
-			Lifecycle:    "remind",
+			Lifecycle:    "mid",
 			RenderIntent: IntentBrief,
 			SessionID:    "multica:session:root-current",
 			InputDigest:  "root-current",
@@ -193,7 +193,7 @@ func TestMulticaSurfacePresentationKeepsCurrentAssignment(t *testing.T) {
 		Request{
 			Principal:    "worker@team",
 			Host:         "multica",
-			Lifecycle:    "remind",
+			Lifecycle:    "mid",
 			RenderIntent: IntentBrief,
 			SessionID:    "multica:session:root-current",
 			InputDigest:  "asg-current",
@@ -211,7 +211,7 @@ func TestMulticaSurfacePresentationKeepsCurrentAssignment(t *testing.T) {
 
 func TestRenderPresentationScopeAndAssignmentState(t *testing.T) {
 	now := mustTime(t, "2026-06-24T10:00:00Z")
-	reqB := Request{Principal: "codex-b@project", Host: "codex", Lifecycle: "nudge", RenderIntent: IntentBrief}
+	reqB := Request{Principal: "codex-b@project", Host: "codex", Lifecycle: "exit", RenderIntent: IntentBrief}
 	proj := view.View{Ref: "proj_assign", Digest: "digest_assign", Content: []view.ResourceContent{
 		content("assignment", "project", []any{map[string]any{
 			"id": "asg1", "actor": "codex-a@project", "assignee": "codex-b@project",
@@ -252,7 +252,7 @@ func TestRenderPresentationScopeAndAssignmentState(t *testing.T) {
 
 func TestDeriveEventEnvelopesSeparateEventModelFromPresentation(t *testing.T) {
 	now := mustTime(t, "2026-06-24T10:00:00Z")
-	reqB := Request{Principal: "codex-b@project", Host: "codex", Lifecycle: "nudge", RenderIntent: IntentBrief}
+	reqB := Request{Principal: "codex-b@project", Host: "codex", Lifecycle: "exit", RenderIntent: IntentBrief}
 	proj := view.View{Ref: "proj_assign", Digest: "digest_assign", Content: []view.ResourceContent{
 		content("assignment", "project", []any{map[string]any{
 			"id": "asg1", "actor": "codex-a@project", "assignee": "codex-b@project",
@@ -311,12 +311,12 @@ func TestProfileCuePolicyFollowsLifecycle(t *testing.T) {
 		content("teamwork_signal", "project", []any{map[string]any{"id": "sig1", "statement": "Need teammate context"}}),
 	}}
 
-	prime := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "prime", RenderIntent: IntentBrief}, proj, now)
+	prime := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "enter", RenderIntent: IntentBrief}, proj, now)
 	if _, ok := eventByType(prime, DerivedEventProfileUpdateRequested); !ok {
 		t.Fatalf("prime with missing profile should render a bounded profile cue: %+v", prime)
 	}
 
-	remind := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "remind", RenderIntent: IntentBrief}, proj, now)
+	remind := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "mid", RenderIntent: IntentBrief}, proj, now)
 	if _, ok := eventByType(remind, DerivedEventProfileUpdateRequested); !ok {
 		t.Fatalf("remind with open teamwork signal should render a contextual profile cue: %+v", remind)
 	}
@@ -328,7 +328,7 @@ func TestProfileCuePolicyFollowsLifecycle(t *testing.T) {
 			"ttl": "30m", "created_at": "2026-06-24T09:45:00Z",
 		}}),
 	}}
-	nudge := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "nudge", RenderIntent: IntentBrief}, workOnly, now)
+	nudge := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "exit", RenderIntent: IntentBrief}, workOnly, now)
 	if _, ok := eventByType(nudge, DerivedEventProfileUpdateRequested); ok {
 		t.Fatalf("nudge should not render profile cue merely because profile is missing: %+v", nudge)
 	}
@@ -339,7 +339,7 @@ func TestProfileCuePolicyFollowsLifecycle(t *testing.T) {
 			"changed_context": []any{"learned managed wake constraint"},
 		}}),
 	}}
-	nudgeChanged := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "nudge", RenderIntent: IntentBrief}, changed, now)
+	nudgeChanged := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "exit", RenderIntent: IntentBrief}, changed, now)
 	if _, ok := eventByType(nudgeChanged, DerivedEventProfileUpdateRequested); !ok {
 		t.Fatalf("nudge with structured changed_context should render profile cue: %+v", nudgeChanged)
 	}
@@ -355,7 +355,7 @@ func TestDerivedCueTextAvoidsForcedActionWording(t *testing.T) {
 			"ttl": "30m", "created_at": "2026-06-24T09:00:00Z",
 		}}),
 	}}
-	body := PresentEventEnvelopes(DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "remind", RenderIntent: IntentBrief}, proj, now))
+	body := PresentEventEnvelopes(DeriveEventEnvelopes(Request{Principal: "codex-a@project", Lifecycle: "mid", RenderIntent: IntentBrief}, proj, now))
 	for _, forced := range []string{"Update your agent_profile", "Decide whether", "Start a new act", "emit progress_digest"} {
 		if strings.Contains(body, forced) {
 			t.Fatalf("derived cue body should not force action with %q:\n%s", forced, body)

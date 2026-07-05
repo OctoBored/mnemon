@@ -13,7 +13,7 @@ import (
 func TestRenderThinHookIsGenericLifecycleShim(t *testing.T) {
 	body, err := RenderThinHook(assets.FS, ThinHookOptions{
 		Host:   "codex",
-		Timing: "remind",
+		Timing: "mid",
 	})
 	if err != nil {
 		t.Fatalf("render thin hook: %v", err)
@@ -23,7 +23,7 @@ func TestRenderThinHookIsGenericLifecycleShim(t *testing.T) {
 		`GUIDE_PATH="${PROJECT_ROOT}/.mnemon/harness/local/guide.md"`,
 		"Evaluate whether governed context should be read before responding.",
 		`grep -q '\[mnemon:wake\]'`,
-		`--lifecycle remind --surface hook`,
+		`--lifecycle mid --surface hook`,
 		`"systemMessage": "${SYSTEM_MESSAGE}"`,
 	} {
 		if !strings.Contains(body, want) {
@@ -60,11 +60,11 @@ func TestRenderThinHookWakeRendersWithoutTokenFile(t *testing.T) {
 		t.Fatalf("mkdir bin dir: %v", err)
 	}
 
-	hook, err := RenderStandardThinHook("codex", "remind")
+	hook, err := RenderStandardThinHook("codex", "mid")
 	if err != nil {
 		t.Fatalf("render codex remind hook: %v", err)
 	}
-	hookPath := filepath.Join(hookDir, "remind.sh")
+	hookPath := filepath.Join(hookDir, "mid.sh")
 	if err := os.WriteFile(hookPath, []byte(hook), 0o755); err != nil {
 		t.Fatalf("write hook: %v", err)
 	}
@@ -75,7 +75,7 @@ set -euo pipefail
 if [[ "$*" == *"--token-file"* ]]; then
   exit 7
 fi
-if [[ "$*" != *"view"* || "$*" != *"--lifecycle remind"* ]]; then
+if [[ "$*" != *"view"* || "$*" != *"--lifecycle mid"* ]]; then
   exit 8
 fi
 printf '[mnemon:work]\nassignment addressed to this principal\n'
@@ -101,7 +101,7 @@ printf '[mnemon:work]\nassignment addressed to this principal\n'
 }
 
 func TestRenderThinHookPrimeLoadsManagedGuide(t *testing.T) {
-	body, err := RenderStandardThinHook("codex", "prime")
+	body, err := RenderStandardThinHook("codex", "enter")
 	if err != nil {
 		t.Fatalf("codex prime thin hook: %v", err)
 	}
@@ -122,14 +122,14 @@ func TestRenderThinHookPrimeLoadsManagedGuide(t *testing.T) {
 }
 
 func TestRenderThinHookHostDialect(t *testing.T) {
-	codex, err := RenderStandardThinHook("codex", "nudge")
+	codex, err := RenderStandardThinHook("codex", "exit")
 	if err != nil {
 		t.Fatalf("codex thin hook: %v", err)
 	}
 	if !strings.Contains(codex, `"systemMessage": "${SYSTEM_MESSAGE}"`) || !strings.Contains(codex, "json_escape") {
 		t.Fatalf("codex thin hook must adapt to JSON system-message dialect:\n%s", codex)
 	}
-	claude, err := RenderStandardThinHook("claude-code", "nudge")
+	claude, err := RenderStandardThinHook("claude-code", "exit")
 	if err != nil {
 		t.Fatalf("claude thin hook: %v", err)
 	}
@@ -140,7 +140,7 @@ func TestRenderThinHookHostDialect(t *testing.T) {
 
 func TestRenderThinHookRejectsUnknownInputs(t *testing.T) {
 	for _, tc := range []ThinHookOptions{
-		{Host: "../codex", Timing: "remind"},
+		{Host: "../codex", Timing: "mid"},
 		{Host: "codex", Timing: "boot"},
 	} {
 		if _, err := RenderThinHook(assets.FS, tc); err == nil {

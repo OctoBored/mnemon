@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "name": "claude-code",
   "description": "Registers Mnemon generic lifecycle hooks in Claude Code.",
   "surfaces": {
@@ -13,11 +13,16 @@
     ]
   },
   "lifecycle_mapping": {
-    "prime": "SessionStart",
-    "remind": "UserPromptSubmit",
-    "nudge": "Stop",
-    "compact": "PreCompact",
-    "maintenance": "subagent-or-manual"
+    "enter": [
+      "SessionStart"
+    ],
+    "mid": [
+      "UserPromptSubmit"
+    ],
+    "exit": [
+      "Stop",
+      "PreCompact"
+    ]
   },
   "mechanics": {
     "stdin_read": {
@@ -27,5 +32,10 @@
       "default": "plain"
     },
     "json_escape": true
-  }
+  },
+  "turn_io": {
+    "turn-in": "[mnemon:wake] sentinel query",
+    "turn-out": "turn output (report anchor)"
+  },
+  "maintenance": "subagent-or-manual"
 }

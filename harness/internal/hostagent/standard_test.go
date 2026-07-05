@@ -17,7 +17,7 @@ func TestInstallStandardHostWritesGenericLifecycleHooks(t *testing.T) {
 	if len(report.Conflicts) != 0 {
 		t.Fatalf("fresh install must not report conflicts: %+v", report)
 	}
-	hook := string(mustReadHostSurface(t, filepath.Join(root, ".codex", "hooks", "mnemon-r1", "prime.sh")))
+	hook := string(mustReadHostSurface(t, filepath.Join(root, ".codex", "hooks", "mnemon-r1", "enter.sh")))
 	for _, want := range []string{"Follow the loaded GUIDE", ".mnemon/harness/local/guide.md"} {
 		if !strings.Contains(hook, want) {
 			t.Fatalf("standard hook missing %q:\n%s", want, hook)

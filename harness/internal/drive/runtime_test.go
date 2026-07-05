@@ -139,12 +139,12 @@ done
 	if err := os.MkdirAll(hookDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(hookDir, "prime.sh"), []byte(`#!/usr/bin/env bash
+	if err := os.WriteFile(filepath.Join(hookDir, "enter.sh"), []byte(`#!/usr/bin/env bash
 printf '{"systemMessage":"prime guide loaded"}\n'
 `), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(hookDir, "remind.sh"), []byte(`#!/usr/bin/env bash
+	if err := os.WriteFile(filepath.Join(hookDir, "mid.sh"), []byte(`#!/usr/bin/env bash
 INPUT="$(cat || true)"
 case "${INPUT}" in
   *"[mnemon:wake]"*) printf '{"systemMessage":"remind rendered governed context"}\n' ;;

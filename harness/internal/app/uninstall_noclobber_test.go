@@ -17,7 +17,7 @@ func TestSetupUninstallPreservesUserEditedStandardHook(t *testing.T) {
 		t.Fatalf("setup: %v", err)
 	}
 
-	hook := filepath.Join(root, ".codex", "hooks", "mnemon-r1", "prime.sh")
+	hook := filepath.Join(root, ".codex", "hooks", "mnemon-r1", "enter.sh")
 	orig, err := os.ReadFile(hook)
 	if err != nil {
 		t.Fatalf("standard hook missing: %v", err)

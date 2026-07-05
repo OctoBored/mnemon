@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+
+	"github.com/mnemon-dev/mnemon/harness/internal/assets"
 )
 
 const standardShimMarker = "mnemon-r1"
@@ -129,13 +131,13 @@ func patchStandardHostRegistration(core projectorCore) error {
 			core.printf("would patch %s\n", standardRegistrationPath(core))
 			return nil
 		}
-		return patchCodexHooks(core.resolve(standardRegistrationPath(core)), core.paths.configDir, standardShimMarker, codexHookOptions{Remind: true, Nudge: true, Compact: true})
+		return patchCodexHooks(core.resolve(standardRegistrationPath(core)), core.paths.configDir, standardShimMarker, core.host, hookSelection{Mid: true, Exit: true})
 	case "claude-code":
 		if core.dryRun {
 			core.printf("would patch %s\n", standardRegistrationPath(core))
 			return nil
 		}
-		return patchClaudeSettings(core.resolve(standardRegistrationPath(core)), core.paths.configDir, standardShimMarker, claudeHookOptions{Remind: true, Nudge: true, Compact: true})
+		return patchClaudeSettings(core.resolve(standardRegistrationPath(core)), core.paths.configDir, standardShimMarker, core.host, hookSelection{Mid: true, Exit: true})
 	default:
 		return fmt.Errorf("unsupported host %q", core.host)
 	}
@@ -144,9 +146,9 @@ func patchStandardHostRegistration(core projectorCore) error {
 func unpatchStandardHostRegistration(core projectorCore) error {
 	switch core.host {
 	case "codex":
-		return unpatchCodexHooks(core.resolve(standardRegistrationPath(core)), standardShimMarker)
+		return unpatchCodexHooks(core.resolve(standardRegistrationPath(core)), standardShimMarker, core.host)
 	case "claude-code":
-		return unpatchClaudeSettings(core.resolve(standardRegistrationPath(core)), standardShimMarker)
+		return unpatchClaudeSettings(core.resolve(standardRegistrationPath(core)), standardShimMarker, core.host)
 	default:
 		return fmt.Errorf("unsupported host %q", core.host)
 	}
@@ -164,6 +166,10 @@ func standardRegistrationPath(core projectorCore) string {
 }
 
 func writeStandardHostManifest(core projectorCore, ownership projectionOwnership) error {
+	lifecycleMapping, err := hostLifecycleMapping(assets.FS, core.host)
+	if err != nil {
+		return err
+	}
 	manifestPath := core.resolve(core.hostManifestPath())
 	manifest := hostProjectionManifest{
 		SchemaVersion: 2,
@@ -198,12 +204,7 @@ func writeStandardHostManifest(core projectorCore, ownership projectionOwnership
 		Reconcile: map[string]any{
 			"actions": []string{"install", "uninstall"},
 		},
-		LifecycleMapping: map[string]string{
-			"prime":   "SessionStart",
-			"remind":  "UserPromptSubmit",
-			"nudge":   "Stop",
-			"compact": "PreCompact",
-		},
+		LifecycleMapping: lifecycleMapping,
 		Surfaces: map[string]string{
 			"hooks": pathJoin(core.paths.configDir, "hooks", standardShimMarker),
 		},

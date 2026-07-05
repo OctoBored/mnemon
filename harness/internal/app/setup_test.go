@@ -25,7 +25,7 @@ func TestSetupWiresChannelAndGenericLifecycleHook(t *testing.T) {
 	}
 	assertPublicSetupOutput(t, out.String())
 
-	primeHook := string(mustRead(t, filepath.Join(root, ".codex", "hooks", "mnemon-r1", "prime.sh")))
+	primeHook := string(mustRead(t, filepath.Join(root, ".codex", "hooks", "mnemon-r1", "enter.sh")))
 	if !strings.Contains(primeHook, "Follow the loaded GUIDE") || !strings.Contains(primeHook, ".mnemon/harness/local/guide.md") {
 		t.Fatalf("standard hook must load the managed guide:\n%s", primeHook)
 	}
@@ -123,7 +123,7 @@ func TestSetupInstallsGenericLifecycleHookWithoutLoop(t *testing.T) {
 		t.Fatalf("setup generic lifecycle hook: %v\nstderr=%s", err, errw.String())
 	}
 	assertPublicSetupOutput(t, out.String())
-	if !strings.Contains(string(mustRead(t, filepath.Join(root, ".codex", "hooks", "mnemon-r1", "prime.sh"))), "Follow the loaded GUIDE") {
+	if !strings.Contains(string(mustRead(t, filepath.Join(root, ".codex", "hooks", "mnemon-r1", "enter.sh"))), "Follow the loaded GUIDE") {
 		t.Fatal("setup without --loop must still install the generic lifecycle hook")
 	}
 	if !strings.Contains(string(mustRead(t, res.GuideFile)), "# Mnemon Harness Guide") {
@@ -154,7 +154,7 @@ func TestSetupDryRunWritesNothing(t *testing.T) {
 	assertPublicSetupOutput(t, out.String())
 	for _, path := range []string{
 		filepath.Join(root, ".mnemon", "harness", "channel", "bindings.json"),
-		filepath.Join(root, ".codex", "hooks", "mnemon-r1", "prime.sh"),
+		filepath.Join(root, ".codex", "hooks", "mnemon-r1", "enter.sh"),
 	} {
 		if _, err := os.Stat(path); !os.IsNotExist(err) {
 			t.Fatalf("dry-run must not write %s; err=%v", path, err)
@@ -207,7 +207,7 @@ func TestSetupRejectsUnsupportedEventPackage(t *testing.T) {
 
 func TestAgentIntegrationHooksDoNotReferenceRemoteWorkspace(t *testing.T) {
 	for _, host := range []string{"codex", "claude-code"} {
-		for _, timing := range []string{"prime", "remind", "nudge", "compact"} {
+		for _, timing := range []string{"enter", "mid", "exit"} {
 			content, err := hostagent.RenderStandardThinHook(host, timing)
 			if err != nil {
 				t.Fatalf("render %s/%s: %v", host, timing, err)

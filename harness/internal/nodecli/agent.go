@@ -55,7 +55,7 @@ func Wake(ctx context.Context, args []string, out, errw io.Writer) error {
 	command := fs.String("command", "codex", "Codex CLI command for --runtime codex-appserver")
 	codexHome := fs.String("codex-home", "", "CODEX_HOME for --runtime codex-appserver")
 	ledgerPath := fs.String("ledger", "", "managed wake ledger path")
-	lifecycle := fs.String("lifecycle", "remind", "render lifecycle used for wake candidate derivation")
+	lifecycle := fs.String("lifecycle", "mid", "render lifecycle used for wake candidate derivation")
 	renderIntent := fs.String("render-intent", presentation.IntentBrief, "render intent used for wake candidate derivation")
 	surface := fs.String("surface", "hook", "render surface used for wake candidate derivation")
 	turnTimeout := fs.Duration("turn-timeout", 5*time.Minute, "timeout for one managed agent turn")

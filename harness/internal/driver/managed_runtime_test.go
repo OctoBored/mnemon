@@ -144,13 +144,13 @@ func TestCodexAppServerAdditionalContextRunsStandardHooks(t *testing.T) {
 	if err := os.MkdirAll(hookDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	prime := filepath.Join(hookDir, "prime.sh")
+	prime := filepath.Join(hookDir, "enter.sh")
 	if err := os.WriteFile(prime, []byte(`#!/usr/bin/env bash
 printf '{"systemMessage":"prime guide loaded"}\n'
 `), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	remind := filepath.Join(hookDir, "remind.sh")
+	remind := filepath.Join(hookDir, "mid.sh")
 	if err := os.WriteFile(remind, []byte(`#!/usr/bin/env bash
 INPUT="$(cat || true)"
 case "${INPUT}" in
@@ -169,8 +169,8 @@ esac
 		t.Fatalf("additional context keys = %+v, want prime and remind", ctx)
 	}
 	for key, want := range map[string]string{
-		"mnemon.hook.prime":  "prime guide loaded",
-		"mnemon.hook.remind": "remind rendered governed context",
+		"mnemon.hook.enter":  "prime guide loaded",
+		"mnemon.hook.mid": "remind rendered governed context",
 	} {
 		entry, ok := ctx[key].(map[string]any)
 		if !ok {

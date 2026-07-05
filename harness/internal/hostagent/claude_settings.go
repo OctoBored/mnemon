@@ -8,38 +8,33 @@ import (
 	"strings"
 )
 
-type claudeHookOptions struct {
-	Remind  bool
-	Nudge   bool
-	Compact bool
-}
-
-func patchClaudeSettings(settingsPath, configDir, marker string, opts claudeHookOptions) error {
+func patchClaudeSettings(settingsPath, configDir, marker, host string, sel hookSelection) error {
 	data, err := loadClaudeSettings(settingsPath)
 	if err != nil {
 		return err
 	}
-	removeClaudeHooks(data, marker)
+	if err := removeClaudeHooks(data, marker, host); err != nil {
+		return err
+	}
+	hooks, err := managedHookEvents(host, sel)
+	if err != nil {
+		return err
+	}
 	hooksDir := pathJoin(configDir, "hooks", marker)
-	addClaudeHook(data, "SessionStart", pathJoin(hooksDir, "prime.sh"))
-	if opts.Remind {
-		addClaudeHook(data, "UserPromptSubmit", pathJoin(hooksDir, "remind.sh"))
-	}
-	if opts.Nudge {
-		addClaudeHook(data, "Stop", pathJoin(hooksDir, "nudge.sh"))
-	}
-	if opts.Compact {
-		addClaudeHook(data, "PreCompact", pathJoin(hooksDir, "compact.sh"))
+	for _, hook := range hooks {
+		addClaudeHook(data, hook.Event, pathJoin(hooksDir, hook.Script))
 	}
 	return writeClaudeSettings(settingsPath, data)
 }
 
-func unpatchClaudeSettings(settingsPath, marker string) error {
+func unpatchClaudeSettings(settingsPath, marker, host string) error {
 	data, err := loadClaudeSettings(settingsPath)
 	if err != nil {
 		return err
 	}
-	removeClaudeHooks(data, marker)
+	if err := removeClaudeHooks(data, marker, host); err != nil {
+		return err
+	}
 	if len(data) == 0 {
 		if err := os.Remove(settingsPath); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("remove Claude settings %s: %w", settingsPath, err)
@@ -85,12 +80,16 @@ func writeClaudeSettings(settingsPath string, data map[string]any) error {
 	return nil
 }
 
-func removeClaudeHooks(data map[string]any, marker string) {
+func removeClaudeHooks(data map[string]any, marker, host string) error {
 	hooks, ok := data["hooks"].(map[string]any)
 	if !ok {
-		return
+		return nil
 	}
-	for _, event := range []string{"SessionStart", "UserPromptSubmit", "Stop", "PreCompact"} {
+	events, err := managedHostEvents(host)
+	if err != nil {
+		return err
+	}
+	for _, event := range events {
 		rawEntries, ok := hooks[event].([]any)
 		if !ok {
 			continue
@@ -110,6 +109,7 @@ func removeClaudeHooks(data map[string]any, marker string) {
 	if len(hooks) == 0 {
 		delete(data, "hooks")
 	}
+	return nil
 }
 
 func addClaudeHook(data map[string]any, event, command string) {

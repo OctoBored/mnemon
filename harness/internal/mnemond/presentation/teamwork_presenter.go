@@ -236,12 +236,18 @@ func shouldRenderProfileCue(req Request, items map[string][]map[string]any, prin
 	}
 	switch req.RenderIntent {
 	case IntentBrief:
+		// L3 closed set (r4-target-architecture §5): enter = last-known-state
+		// injection (always cue when stale), mid = mid-flight re-render (cue
+		// only when collaboration-relevant), exit = context about to close.
+		// exit keeps the NARROW recent-change heuristic: it fires on every
+		// Stop, so an always-on stale cue would be per-turn noise (the old
+		// compact-time always-cue folds into enter's next-session render).
 		switch strings.TrimSpace(req.Lifecycle) {
-		case "prime", "compact":
+		case "enter":
 			return true
-		case "remind":
+		case "mid":
 			return profileRelevantForCollaboration(items, principal, now)
-		case "nudge":
+		case "exit":
 			return profileRelevantForRecentChange(items, principal)
 		default:
 			return false

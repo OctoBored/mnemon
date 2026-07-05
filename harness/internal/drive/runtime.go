@@ -291,7 +291,7 @@ func CodexAppServerDeveloperInstructions(ctx context.Context, workspace string, 
 
 func CodexAppServerAdditionalContext(ctx context.Context, workspace string, env []string, query string) (map[string]any, error) {
 	out := map[string]any{}
-	for _, lifecycle := range []string{"prime", "remind"} {
+	for _, lifecycle := range []string{"enter", "mid"} {
 		message, err := runCodexLifecycleHook(ctx, workspace, env, lifecycle, query)
 		if err != nil {
 			return nil, err
@@ -353,7 +353,7 @@ func runCodexLifecycleHook(ctx context.Context, workspace string, env []string, 
 		return "", err
 	}
 	stdin := "{}"
-	if lifecycle == "remind" {
+	if lifecycle == "mid" {
 		raw, err := json.Marshal(map[string]string{"prompt": query})
 		if err != nil {
 			return "", err
