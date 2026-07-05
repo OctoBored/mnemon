@@ -98,12 +98,12 @@ func BuildOutboundCapsule(env eventmodel.EventEnvelope, replicaID string, priv e
 	}
 	item := capsuleLastItem(material.Fields)
 	rule, _ := item["rule"].(map[string]any)
-	narrative, _ := item["narrative"].(map[string]any)
 	refs, _ := item["refs"].(map[string]any)
-	if narrative == nil {
-		narrative = map[string]any{}
-	}
-	narrativeJSON, err := json.Marshal(narrative)
+	// the FULL item rides as the record's semantic payload — capsules stay
+	// faithful for any kind shape (zoned coordination items and flat
+	// external-package entries alike); the rule seats below are the
+	// governed projection of the same item.
+	narrativeJSON, err := json.Marshal(item)
 	if err != nil {
 		return OutboundCapsule{}, err
 	}
@@ -170,12 +170,14 @@ func BuildOutboundCapsule(env eventmodel.EventEnvelope, replicaID string, priv e
 }
 
 func capsuleLastItem(fields map[string]any) map[string]any {
-	items, ok := fields["items"].([]any)
-	if !ok || len(items) == 0 {
-		return fields
-	}
-	if item, ok := items[len(items)-1].(map[string]any); ok {
-		return item
+	for _, listField := range []string{"items", "entries", "declarations"} {
+		items, ok := fields[listField].([]any)
+		if !ok || len(items) == 0 {
+			continue
+		}
+		if item, ok := items[len(items)-1].(map[string]any); ok {
+			return item
+		}
 	}
 	return fields
 }
@@ -210,7 +212,7 @@ func capsuleStringList(section map[string]any, key string) []string {
 // blobs from the hub lane into the local store first) and synthesizes the
 // same-shape synced-event envelopes the import pipeline re-governs — the
 // "same pipeline re-run" form of capsule import.
-func UnpackInboundCapsule(raw []byte, fetchBlob func(digest string) ([]byte, error), blobs *blob.Store) ([]eventmodel.EventEnvelope, error) {
+func UnpackInboundCapsule(raw []byte, fetchBlob func(digest string) ([]byte, error), blobs *blob.Store, itemsFieldFor func(kind string) string) ([]eventmodel.EventEnvelope, error) {
 	env, err := capsule.DecodeEnvelope(raw)
 	if err != nil {
 		return nil, err
@@ -240,48 +242,28 @@ func UnpackInboundCapsule(raw []byte, fetchBlob func(digest string) ([]byte, err
 	}
 	var out []eventmodel.EventEnvelope
 	for _, rec := range res.Document.Records {
-		narrative := map[string]any{}
+		// the record's semantic payload IS the original item; parse it back
+		// whole, falling back to a seat-reconstructed item for foreign
+		// producers that sent plain text
+		item := map[string]any{}
 		if strings.TrimSpace(rec.Narrative) != "" {
-			if err := json.Unmarshal([]byte(rec.Narrative), &narrative); err != nil {
-				narrative = map[string]any{"summary": rec.Narrative}
+			if err := json.Unmarshal([]byte(rec.Narrative), &item); err != nil {
+				item = map[string]any{"narrative": map[string]any{"summary": rec.Narrative}}
 			}
 		}
-		rule := map[string]any{}
-		for key, value := range map[string]string{
-			"scope": rec.Scope, "ttl": rec.TTL, "assignee": rec.Assignee, "outcome": rec.Outcome,
-		} {
-			if value != "" {
-				rule[key] = value
+		if _, ok := item["id"]; !ok {
+			item["id"] = rec.ID
+		}
+		if _, ok := item["actor"]; !ok {
+			item["actor"] = rec.Actor
+		}
+		listField := "items"
+		if itemsFieldFor != nil {
+			if name := itemsFieldFor(rec.Subject.Kind); name != "" {
+				listField = name
 			}
 		}
-		refs := map[string]any{}
-		var evidence, artifacts []string
-		for _, link := range rec.Links {
-			switch link.Rel {
-			case "evidence":
-				evidence = append(evidence, link.Href)
-			case "artifact":
-				artifacts = append(artifacts, link.Href)
-			case "assignment":
-				rule["assignment_ref"] = link.Href
-			}
-		}
-		if len(evidence) > 0 {
-			refs["evidence_refs"] = evidence
-		}
-		if len(artifacts) > 0 {
-			refs["artifact_refs"] = artifacts
-		}
-		item := map[string]any{
-			"id":         rec.ID,
-			"actor":      rec.Actor,
-			"created_at": rec.Decision.AcceptedAt,
-			"ingest_seq": rec.Decision.IngestSeq,
-			"rule":       rule,
-			"narrative":  narrative,
-			"refs":       refs,
-		}
-		fields := map[string]any{"items": []any{item}}
+		fields := map[string]any{listField: []any{item}}
 		material := contract.SyncedEventMaterial{
 			OriginReplicaID: res.Document.Header.Producer.Principal,
 			LocalDecisionID: rec.Decision.ID,

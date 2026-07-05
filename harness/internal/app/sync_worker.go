@@ -309,10 +309,17 @@ func syncWorkerPull(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remote
 	if err != nil {
 		return err
 	}
+	resolved := resolveSyncCatalog(catalog)
+	itemsFieldFor := func(kind string) string {
+		if pkg, ok := resolved[kind]; ok && pkg.ItemsField != "" {
+			return pkg.ItemsField
+		}
+		return "items"
+	}
 	var events []eventmodel.EventEnvelope
 	var diagnostics []contract.EventExchangeResult
 	for _, raw := range page.Items {
-		unpacked, unpackErr := UnpackInboundCapsule(raw, hub.BlobGet, blobs)
+		unpacked, unpackErr := UnpackInboundCapsule(raw, hub.BlobGet, blobs, itemsFieldFor)
 		if unpackErr != nil {
 			// a bad atom never blocks the feed: the cursor keeps moving and
 			// the failure lands as a DURABLE local diagnostic (once).

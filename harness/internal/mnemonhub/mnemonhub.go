@@ -191,6 +191,11 @@ func (s *Server) Status(principal contract.ActorID) (contract.SyncStatusResponse
 	if err != nil {
 		return contract.SyncStatusResponse{}, err
 	}
+	capsules, err := s.store.HubCapsuleCount()
+	if err != nil {
+		return contract.SyncStatusResponse{}, err
+	}
+	received += capsules
 	cursors, err := s.store.CursorsByPrefix(serveCursorPrefix)
 	if err != nil {
 		return contract.SyncStatusResponse{}, err

@@ -1322,3 +1322,11 @@ func (s *Store) HubRejectedAfter(replica string, cursor int64, limit int) ([]Hub
 	}
 	return out, next, rows.Err()
 }
+
+// HubCapsuleCount counts accepted capsules (the R4 counterpart of the
+// legacy received counter; Status folds both during the compat window).
+func (s *Store) HubCapsuleCount() (int64, error) {
+	var n int64
+	err := s.db.QueryRow(`SELECT COUNT(*) FROM hub_capsules`).Scan(&n)
+	return n, err
+}
