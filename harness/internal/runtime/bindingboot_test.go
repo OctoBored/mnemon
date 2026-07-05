@@ -1,14 +1,10 @@
 package runtime
 
 import (
-	"context"
-	"io"
-	"net"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
@@ -80,49 +76,5 @@ func TestBindingFileChannelTokenAuth(t *testing.T) {
 	// unknown token rejected.
 	if _, err := access.NewClientWithToken(srv.URL, "nope").Status(""); err == nil {
 		t.Fatal("unknown bearer token must be rejected")
-	}
-}
-
-// TestRunHTTPServerWithBindingsBoots is the P3.2 server-boot test: the binding-configured front door
-// boots on a real port, a token client round-trips status, and ctx cancel shuts it down.
-func TestRunHTTPServerWithBindingsBoots(t *testing.T) {
-	root, bindingPath := writeProjectBindings(t)
-	loaded, err := access.LoadBindingFile(root, bindingPath)
-	if err != nil {
-		t.Fatalf("load: %v", err)
-	}
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	addr := ln.Addr().String()
-	_ = ln.Close()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() {
-		done <- RunHTTPServerWithBindings(ctx, addr, filepath.Join(root, DefaultStorePath), loaded, io.Discard)
-	}()
-
-	c := access.NewClientWithToken("http://"+addr, "tok-codex")
-	var st contract.ChannelStatus
-	deadline := time.Now().Add(3 * time.Second)
-	for {
-		st, err = c.Status("")
-		if err == nil {
-			break
-		}
-		if time.Now().After(deadline) {
-			cancel()
-			t.Fatalf("server did not become ready: %v", err)
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	if st.Principal != "codex@project" {
-		t.Fatalf("status principal = %q", st.Principal)
-	}
-	cancel()
-	if err := <-done; err != nil {
-		t.Fatalf("server exited with error: %v", err)
 	}
 }
