@@ -9,9 +9,6 @@ const (
 	MulticaMetadataSourceArtifactRef = multicasurface.MulticaMetadataSourceArtifactRef
 	MulticaMetadataSurfaceRole       = multicasurface.MulticaMetadataSurfaceRole
 	MulticaMetadataNoAutoDispatch    = multicasurface.MulticaMetadataNoAutoDispatch
-	MulticaMetadataCaseID            = multicasurface.MulticaMetadataCaseID
-	MulticaMetadataRound             = multicasurface.MulticaMetadataRound
-	MulticaMetadataPoCID             = multicasurface.MulticaMetadataPoCID
 
 	MulticaSurfaceRoleDisplay  = string(multicasurface.SurfaceRoleDisplay)
 	MulticaSurfaceRoleActivate = string(multicasurface.SurfaceRoleActivate)

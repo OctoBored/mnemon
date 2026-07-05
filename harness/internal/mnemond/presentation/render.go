@@ -42,8 +42,7 @@ type Request struct {
 }
 
 type Budget struct {
-	MaxChars             int
-	PresentationViewTier contract.BudgetTier
+	MaxChars int
 }
 
 type ClientInfo struct {

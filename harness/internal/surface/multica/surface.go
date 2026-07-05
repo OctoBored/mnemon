@@ -29,9 +29,6 @@ const (
 	MulticaMetadataSourceArtifactRef = "mnemon.source_artifact_ref"
 	MulticaMetadataSurfaceRole       = "mnemon.surface_role"
 	MulticaMetadataNoAutoDispatch    = "mnemon.no_auto_dispatch"
-	MulticaMetadataCaseID            = "mnemon.case_id"
-	MulticaMetadataRound             = "mnemon.round"
-	MulticaMetadataPoCID             = "mnemon.poc_id"
 )
 
 type SurfaceRefs struct {
