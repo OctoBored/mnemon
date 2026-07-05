@@ -23,7 +23,7 @@ func (s staticCapsuleRemote) CapsulePush([]byte) (access.CapsuleAccepted, bool, 
 	return access.CapsuleAccepted{}, false, nil, nil
 }
 
-func (s staticCapsuleRemote) CapsulePull(cursor int64, _ int, _ string) (access.CapsuleFeedPage, error) {
+func (s staticCapsuleRemote) CapsulePullFrom(_ string, cursor int64, _ int, _ string) (access.CapsuleFeedPage, error) {
 	if cursor >= int64(len(s.items)) {
 		return access.CapsuleFeedPage{NextCursor: cursor}, nil
 	}

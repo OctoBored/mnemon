@@ -83,7 +83,7 @@ func RegisterCapsuleHandlers(mux *http.ServeMux, hub *Server, auth Authenticator
 				writeProblem(w, parseProblem)
 				return
 			}
-			feed, problem := hub.PullCapsules(principal, cursor, limit, func(capsuleID string) {
+			feed, problem := hub.PullCapsules(principal, r.URL.Query().Get("origin"), cursor, limit, func(capsuleID string) {
 				auditLine(audit, string(principal), "capsules.clamp", capsuleID)
 			})
 			if problem != nil {

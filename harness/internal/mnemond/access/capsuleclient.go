@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	neturl "net/url"
 	"strconv"
 )
 
@@ -74,9 +75,18 @@ type CapsuleFeedPage struct {
 // CapsulePull GETs accepted capsules after cursor; a matching etag returns
 // NotModified with an empty page (the zero-cost idle pass).
 func (c *Client) CapsulePull(cursor int64, limit int, etag string) (CapsuleFeedPage, error) {
+	return c.CapsulePullFrom("", cursor, limit, etag)
+}
+
+// CapsulePullFrom names the puller's own replica origin so the hub can
+// exclude its capsules (self-edge safe: the credential may be shared).
+func (c *Client) CapsulePullFrom(origin string, cursor int64, limit int, etag string) (CapsuleFeedPage, error) {
 	url := c.baseURL + "/capsules?cursor=" + strconv.FormatInt(cursor, 10)
 	if limit > 0 {
 		url += "&limit=" + strconv.Itoa(limit)
+	}
+	if origin != "" {
+		url += "&origin=" + neturl.QueryEscape(origin)
 	}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

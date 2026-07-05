@@ -132,8 +132,10 @@ func TestHubCapsulePushReplayAndPull(t *testing.T) {
 	if resp.StatusCode != http.StatusOK || resp.Header.Get("Idempotency-Replayed") != "true" {
 		t.Fatalf("replay = %d replayed=%q", resp.StatusCode, resp.Header.Get("Idempotency-Replayed"))
 	}
-	// origin exclusion: A pulls nothing, B pulls the capsule
-	resp, body = rig.do(t, http.MethodGet, "/capsules?cursor=0", "tok-a", nil, nil)
+	// origin exclusion: A (naming its own producer origin) pulls nothing,
+	// B pulls the capsule — exclusion keys on the capsule producer, not the
+	// hub credential (self-edge devices may share one credential)
+	resp, body = rig.do(t, http.MethodGet, "/capsules?cursor=0&origin=replica-a%40e1", "tok-a", nil, nil)
 	var feedA struct {
 		Items []json.RawMessage `json:"items"`
 	}

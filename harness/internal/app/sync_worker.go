@@ -221,7 +221,7 @@ func syncWorkerHTTPRemote(entry exchange.RemoteEntry, opts SyncWorkerOptions) (c
 // so the exchange backend seam stays untouched.
 type capsuleWorkspace interface {
 	CapsulePush(raw []byte) (access.CapsuleAccepted, bool, *access.HubProblem, error)
-	CapsulePull(cursor int64, limit int, etag string) (access.CapsuleFeedPage, error)
+	CapsulePullFrom(origin string, cursor int64, limit int, etag string) (access.CapsuleFeedPage, error)
 	BlobPut(digest string, data []byte) error
 	BlobGet(digest string) ([]byte, error)
 }
@@ -290,7 +290,7 @@ func syncWorkerPull(rt *runtime.Runtime, hub capsuleWorkspace, remoteID string, 
 		return err
 	}
 	cursor, _ := strconv.ParseInt(strings.TrimSpace(pullState.RemoteCursor), 10, 64)
-	page, err := hub.CapsulePull(cursor, 0, "")
+	page, err := hub.CapsulePullFrom(pullState.ReplicaID, cursor, 0, "")
 	if err != nil {
 		return fmt.Errorf("capsule pull failed: %w", err)
 	}

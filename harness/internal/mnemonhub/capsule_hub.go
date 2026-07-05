@@ -87,7 +87,7 @@ func (s *Server) PushCapsule(principal contract.ActorID, rawEnvelope []byte, env
 			return PushCapsuleResult{}, problem
 		}
 	}
-	seq, replayed, err := s.store.AppendHubCapsule(res.CapsuleID, string(principal), string(rawEnvelope), s.now())
+	seq, replayed, err := s.store.AppendHubCapsule(res.CapsuleID, res.Document.Header.Producer.Principal, string(rawEnvelope), s.now())
 	if err != nil {
 		return PushCapsuleResult{}, &Problem{Type: ProblemEnvelopeMalformed, Title: "store append failed", Status: 500, Detail: err.Error()}
 	}
@@ -98,13 +98,16 @@ func (s *Server) PushCapsule(principal contract.ActorID, rawEnvelope []byte, env
 // visibility clamp: a capsule is visible iff EVERY record subject is inside
 // the puller's grant; partial overreach hides the atom and audits a clamped
 // line (the capsule assembler's cue to package per audience/scope).
-func (s *Server) PullCapsules(principal contract.ActorID, cursor int64, limit int, clampAudit func(capsuleID string)) (CapsuleFeed, *Problem) {
+// origin is the PULLER's replica identity (capsule producer namespace, not
+// the hub credential): self-edge devices share a hub principal but never
+// re-import their own capsules.
+func (s *Server) PullCapsules(principal contract.ActorID, origin string, cursor int64, limit int, clampAudit func(capsuleID string)) (CapsuleFeed, *Problem) {
 	grant, ok := s.grants.Grant(principal, contract.SyncVerbPull)
 	if !ok {
 		return CapsuleFeed{}, &Problem{Type: ProblemScopeOutOfGrant, Title: "no pull grant", Status: 403,
 			Detail: fmt.Sprintf("principal %q has no replica grant for %s", principal, contract.SyncVerbPull)}
 	}
-	records, next, err := s.store.HubCapsulesAfter(cursor, string(principal), limit)
+	records, next, err := s.store.HubCapsulesAfter(cursor, origin, limit)
 	if err != nil {
 		return CapsuleFeed{}, &Problem{Type: ProblemEnvelopeMalformed, Title: "store read failed", Status: 500, Detail: err.Error()}
 	}

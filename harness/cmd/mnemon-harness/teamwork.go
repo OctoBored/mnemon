@@ -80,6 +80,9 @@ func init() {
 	}
 	registerProfileFlags(profile)
 
+	for _, c := range []*cobra.Command{signal, assign, report, profile} {
+		registerConnectionFlags(c)
+	}
 	teamworkCmd.AddCommand(signal, assign, report, profile)
 	teamworkCmd.GroupID = groupSpine
 	rootCmd.AddCommand(teamworkCmd)
