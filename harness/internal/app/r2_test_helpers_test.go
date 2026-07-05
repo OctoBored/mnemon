@@ -15,12 +15,12 @@ func r2Assignment(scope, ttl, assignee, expectedWork, expectedFeedback string, e
 }
 
 func r2Progress(summary string) map[string]any {
-	return eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": summary}, nil)
+	return eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": summary}, nil)
 }
 
 func r2ProgressFor(assignmentRef, scope, summary string, evidenceRefs ...any) map[string]any {
 	return eventmodel.BuildPayload(
-		map[string]any{"assignment_ref": assignmentRef, "scope": scope, "feedback_kind": "progress"},
+		map[string]any{"assignment_ref": assignmentRef, "scope": scope, "outcome": "progress"},
 		map[string]any{"summary": summary},
 		map[string]any{"evidence_refs": evidenceRefs},
 	)

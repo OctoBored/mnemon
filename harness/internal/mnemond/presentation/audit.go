@@ -88,7 +88,7 @@ func (s *JSONLAuditSink) WriteRenderAudit(_ context.Context, r AuditRecord) erro
 
 func presentationSectionCounts(body string) map[string]int {
 	counts := map[string]int{}
-	for _, kind := range []string{"profile", "signal", "work", "feedback", "integrate", "expired"} {
+	for _, kind := range []string{"profile", "signal", "work", "blocker", "integrate", "expired"} {
 		counts[kind] = strings.Count(body, "[mnemon:"+kind+"]")
 	}
 	return counts

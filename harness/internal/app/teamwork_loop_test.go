@@ -86,8 +86,8 @@ func TestMinimalTeamworkLoopThroughRenderPresentations(t *testing.T) {
 	))
 
 	work := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentBrief})
-	if !strings.Contains(work.Body, "[mnemon:work]") || !strings.Contains(work.Body, "asg-r1") || !strings.Contains(work.Body, "[mnemon:feedback]") {
-		t.Fatalf("B must see work + feedback presentation for assignment:\n%s", work.Body)
+	if !strings.Contains(work.Body, "[mnemon:work]") || !strings.Contains(work.Body, "asg-r1") || !strings.Contains(work.Body, "teamwork report --assignment-ref") {
+		t.Fatalf("B must see the merged work cue for assignment:\n%s", work.Body)
 	}
 
 	observe(clientB, "progress-r1", "progress_digest.write_candidate.observed",

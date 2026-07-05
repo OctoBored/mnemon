@@ -40,7 +40,7 @@ var (
 
 	controlTeamworkProgressAssignmentRef string
 	controlTeamworkProgressScope         string
-	controlTeamworkProgressFeedbackKind  string
+	controlTeamworkProgressOutcome  string
 	controlTeamworkProgressSummary       string
 	controlTeamworkProgressBlocker       string
 	controlTeamworkProgressResult        string
@@ -150,13 +150,13 @@ var controlTeamworkProgressCmd = &cobra.Command{
 	Deprecated: "use `mnemon-harness teamwork report` (R4 dialect face; this stub is removed at S6)",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := requireShortFields(map[string]string{
-			"--feedback-kind": controlTeamworkProgressFeedbackKind,
+			"--feedback-kind": controlTeamworkProgressOutcome,
 			"--summary":       controlTeamworkProgressSummary,
 		}); err != nil {
 			return err
 		}
 		rule := map[string]any{
-			"feedback_kind": controlTeamworkProgressFeedbackKind,
+			"outcome": controlTeamworkProgressOutcome,
 		}
 		putString(rule, "assignment_ref", controlTeamworkProgressAssignmentRef)
 		putString(rule, "scope", controlTeamworkProgressScope)
@@ -467,7 +467,7 @@ func registerProgressFlags(c *cobra.Command) {
 	c.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
 	c.Flags().StringVar(&controlTeamworkProgressAssignmentRef, "assignment-ref", "", "assignment id this progress reports on")
 	c.Flags().StringVar(&controlTeamworkProgressScope, "scope", "", "progress scope")
-	c.Flags().StringVar(&controlTeamworkProgressFeedbackKind, "feedback-kind", "progress", "progress, result, or blocker")
+	c.Flags().StringVar(&controlTeamworkProgressOutcome, "feedback-kind", "progress", "progress, result, or blocker")
 	c.Flags().StringVar(&controlTeamworkProgressSummary, "summary", "", "natural-language progress summary")
 	c.Flags().StringVar(&controlTeamworkProgressBlocker, "blocker", "", "blocker details")
 	c.Flags().StringVar(&controlTeamworkProgressResult, "result", "", "result details")

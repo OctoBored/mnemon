@@ -3,12 +3,12 @@ package runtime
 import eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 
 func runtimeR2Progress(summary string) map[string]any {
-	return eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": summary}, nil)
+	return eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": summary}, nil)
 }
 
 func runtimeR2ProgressWithContext(summary string, changedContext ...any) map[string]any {
 	return eventmodel.BuildPayload(
-		map[string]any{"feedback_kind": "progress"},
+		map[string]any{"outcome": "progress"},
 		map[string]any{"summary": summary, "changed_context": changedContext},
 		nil,
 	)

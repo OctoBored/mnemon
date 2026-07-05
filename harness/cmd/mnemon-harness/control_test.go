@@ -366,7 +366,7 @@ func TestControlShortCommandsEmitR2Payloads(t *testing.T) {
 	buf.Reset()
 	controlExtID = "short-progress"
 	controlTeamworkProgressAssignmentRef = "asg-short"
-	controlTeamworkProgressFeedbackKind = "progress"
+	controlTeamworkProgressOutcome = "progress"
 	controlTeamworkProgressSummary = "Reviewed the short command surface; it emits nested payload sections."
 	controlTeamworkProgressEvidence = []string{"assignment asg-short"}
 	controlTeamworkProgressCmd.SetOut(&buf)
@@ -626,7 +626,7 @@ func resetControlShortCommandVars() {
 
 	controlTeamworkProgressAssignmentRef = ""
 	controlTeamworkProgressScope = ""
-	controlTeamworkProgressFeedbackKind = "progress"
+	controlTeamworkProgressOutcome = "progress"
 	controlTeamworkProgressSummary = ""
 	controlTeamworkProgressBlocker = ""
 	controlTeamworkProgressResult = ""

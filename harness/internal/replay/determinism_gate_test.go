@@ -45,7 +45,7 @@ func progressEnv(extID, summary string) contract.ObservationEnvelope {
 	return contract.ObservationEnvelope{
 		ExternalID: extID,
 		Event: contract.Event{Type: "progress_digest.write_candidate.observed",
-			Payload: eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": summary}, nil)},
+			Payload: eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": summary}, nil)},
 	}
 }
 

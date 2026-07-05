@@ -196,7 +196,7 @@ func progressDigestFields() []FieldSpec {
 	return []FieldSpec{
 		ruleField("assignment_ref", unsafeText()),
 		ruleField("scope", unsafeText()),
-		ruleField("feedback_kind", required("missing"), enum("progress|result|blocker", "invalid feedback_kind")),
+		ruleField("outcome", required("missing"), enum("progress|result|blocker", "invalid outcome")),
 		narrativeField("summary", required("empty"), unsafeText()),
 		narrativeField("blocker", unsafeText()),
 		narrativeField("result", unsafeText()),

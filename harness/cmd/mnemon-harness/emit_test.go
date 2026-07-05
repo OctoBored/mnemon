@@ -38,7 +38,7 @@ func TestEmitAssemblesSameWireAsDialect(t *testing.T) {
 
 	// generic emit
 	emitSchema = "teamwork/report"
-	emitRulePairs = []string{"feedback_kind=result", "scope=payments/reconcile"}
+	emitRulePairs = []string{"outcome=result", "scope=payments/reconcile"}
 	emitRefPairs = []string{"evidence_refs=seq:41", "evidence_refs=seq:42"}
 	emitNarrPairs = []string{"summary=排查完成,根因已定位。", "result=对账窗口恢复 30000。"}
 	emitExternalID = ""
@@ -50,7 +50,7 @@ func TestEmitAssemblesSameWireAsDialect(t *testing.T) {
 
 	// dialect equivalent
 	resetProgressVars()
-	controlTeamworkProgressFeedbackKind = "result"
+	controlTeamworkProgressOutcome = "result"
 	controlTeamworkProgressScope = "payments/reconcile"
 	controlTeamworkProgressSummary = "排查完成,根因已定位。"
 	controlTeamworkProgressResult = "对账窗口恢复 30000。"

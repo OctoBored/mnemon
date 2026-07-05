@@ -63,7 +63,7 @@ run_host() {
 		local out
 		out="$("$MH" control observe --addr "$addr" --principal "$principal" --token-file "$tok" \
 			--type progress_digest.write_candidate.observed --external-id m1 \
-			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"E2E progress works for '"$host"'"}}')"
+			--payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"E2E progress works for '"$host"'"}}')"
 		case "$out" in *ticked=true*) ;; *) echo "observe: $out"; exit 1 ;; esac
 
 		# pull returns the admitted progress event state (one event subject)
@@ -77,14 +77,14 @@ run_host() {
 		# negative: a secret-like candidate is denied; pull still shows exactly one event subject
 		"$MH" control observe --addr "$addr" --principal "$principal" --token-file "$tok" \
 			--type progress_digest.write_candidate.observed --external-id bad1 \
-			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"api_key=sk-abcdefABCDEF123456"}}' >/dev/null
+			--payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"api_key=sk-abcdefABCDEF123456"}}' >/dev/null
 		out="$("$MH" control pull --addr "$addr" --principal "$principal" --token-file "$tok")"
 		case "$out" in *event_subjects=1*) ;; *) echo "negative pull leaked: $out"; exit 1 ;; esac
 
 		# R1: write is immediately visible through render context; no background workspace mirror.
 		"$MH" control observe --addr "$addr" --principal "$principal" --token-file "$tok" \
 			--type progress_digest.write_candidate.observed --external-id m2 \
-			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"E2E render context '"$host"'"}}' >/dev/null
+			--payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"E2E render context '"$host"'"}}' >/dev/null
 		out="$("$MH" view --addr "$addr" --principal "$principal" --token-file "$tok")"
 		case "$out" in *"E2E render context $host"*) ;; *) echo "render context missing progress: $out"; exit 1 ;; esac
 
@@ -563,7 +563,7 @@ run_sync_pair() {
 		[ "$up" = 1 ] || { cat "$WORK/run-sync-a.log"; exit 1; }
 		"$MH" control observe --addr http://127.0.0.1:8787 --principal codex@project --token-file "$tok" \
 			--type progress_digest.write_candidate.observed --external-id sp1 \
-			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"sync pair payload from replica A"}}' >/dev/null
+			--payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"sync pair payload from replica A"}}' >/dev/null
 		# journal (external declared kind): the PD6 kind-agnostic produce surface emits a synced event
 		# for it exactly because its descriptor declares sync.importable — no kind literal in code.
 		"$MH" control observe --addr http://127.0.0.1:8787 --principal codex@project --token-file "$tok" \
@@ -635,7 +635,7 @@ run_sync_pair() {
 		local tok=".mnemon/harness/channel/credentials/codex-project.token"
 		out="$("$MH" control observe --addr http://127.0.0.1:8787 --principal codex@project --token-file "$tok" \
 			--type progress_digest.write_candidate.observed --external-id sp-offline \
-			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"offline write while hub is down"}}')"
+			--payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"offline write while hub is down"}}')"
 		case "$out" in *ticked=true*) ;; *) echo "offline observe: $out"; exit 1 ;; esac
 		"$MH" control pull --addr http://127.0.0.1:8787 --principal codex@project --token-file "$tok" >/dev/null
 	) || fail "I13 offline leg failed"
@@ -702,7 +702,7 @@ run_daemon() {
 		local out
 		out="$("$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
 			--type progress_digest.write_candidate.observed --external-id d1 \
-			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"daemon governs this"}}')"
+			--payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"daemon governs this"}}')"
 		case "$out" in *ticked=true*) ;; *) echo "daemon observe: $out"; exit 1 ;; esac
 
 		mnemond down --root . >/dev/null || { echo "mnemond down failed"; exit 1; }
@@ -747,7 +747,7 @@ run_coordination() {
 		"$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
 			--type assignment.write_candidate.observed --external-id ci2b --payload '{"rule":{"scope":"no evidence","ttl":"1h","assignee":"codex@impl"},"narrative":{"expected_work":"attempt no-evidence work","expected_feedback":"progress_digest with result or blocker"}}' >/dev/null
 		out="$("$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
-			--type progress_digest.write_candidate.observed --external-id ci3 --payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"event view 80 percent done"}}')"
+			--type progress_digest.write_candidate.observed --external-id ci3 --payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"event view 80 percent done"}}')"
 		case "$out" in *ticked=true*) ;; *) echo "progress_digest observe: $out"; exit 1 ;; esac
 		# all three governed event subjects are pullable in the default coordination scope
 		out="$("$MH" control pull --addr "http://$addr" --principal codex@project --token-file "$tok")"
@@ -799,7 +799,7 @@ run_subscription() {
 		for n in 1 2 3; do
 			out="$("$MH" control observe --addr "http://$addr" --principal codex@project --token-file "$tok" \
 				--type progress_digest.write_candidate.observed --external-id "sub$n" \
-				--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"budget entry '"$n"'"}}')"
+				--payload '{"rule":{"outcome":"progress"},"narrative":{"summary":"budget entry '"$n"'"}}')"
 			case "$out" in *ticked=true*) ;; *) echo "sub observe $n: $out"; exit 1 ;; esac
 		done
 		# the context packet is budgeted to digest-only: the newest entry present, older ones dropped.

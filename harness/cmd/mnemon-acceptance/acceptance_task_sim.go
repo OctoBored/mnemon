@@ -538,7 +538,7 @@ func (s taskSimRun) waitAndAct(agent *r1CodexAgent, assignmentID, externalID, su
 		"rule": map[string]any{
 			"assignment_ref": assignmentID,
 			"scope":          "task-sim",
-			"feedback_kind":  "progress",
+			"outcome":  "progress",
 		},
 		"narrative": map[string]any{
 			"summary":         summary,

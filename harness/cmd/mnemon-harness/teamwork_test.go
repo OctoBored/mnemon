@@ -63,7 +63,7 @@ func teamworkSub(t *testing.T, name string) *cobra.Command {
 }
 
 func resetProgressVars() {
-	controlTeamworkProgressFeedbackKind = "progress"
+	controlTeamworkProgressOutcome = "progress"
 	controlTeamworkProgressSummary = ""
 	controlTeamworkProgressAssignmentRef = ""
 	controlTeamworkProgressScope = ""
@@ -122,8 +122,8 @@ func TestTeamworkReportOutcomeAndAttachWire(t *testing.T) {
 		t.Fatalf("wire event type changed: %s", env.Event.Type)
 	}
 	rule, _ := env.Event.Payload["rule"].(map[string]any)
-	if rule["feedback_kind"] != "result" {
-		t.Fatalf("--outcome must map onto the wire feedback_kind, got %v", rule["feedback_kind"])
+	if rule["outcome"] != "result" {
+		t.Fatalf("--outcome must map onto the wire outcome, got %v", rule["outcome"])
 	}
 	refs, _ := env.Event.Payload["refs"].(map[string]any)
 	arts, _ := refs["artifact_refs"].([]any)

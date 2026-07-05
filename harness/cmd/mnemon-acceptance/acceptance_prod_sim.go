@@ -535,7 +535,7 @@ func (s prodSimRun) waitAndAct(agent *r1CodexSyncAgent, assignmentID, externalID
 		"rule": map[string]any{
 			"assignment_ref": assignmentID,
 			"scope":          "prod-sim",
-			"feedback_kind":  "progress",
+			"outcome":  "progress",
 		},
 		"narrative": map[string]any{
 			"summary":         summary,

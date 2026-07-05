@@ -11,12 +11,12 @@ import (
 )
 
 const (
-	DerivedEventProfileUpdateRequested   = "profile.update_requested"
-	DerivedEventTeamworkSignalOpen       = "teamwork.signal_open"
-	DerivedEventAssignmentExpired        = "assignment.expired"
-	DerivedEventAssignmentProgressReady  = "assignment.progress_ready"
-	DerivedEventAssignmentWorkAvailable  = "assignment.work_available"
-	DerivedEventAssignmentFeedbackNeeded = "assignment.feedback_needed"
+	DerivedEventProfileUpdateRequested  = "profile.update_requested"
+	DerivedEventTeamworkSignalOpen      = "teamwork.signal_open"
+	DerivedEventAssignmentExpired       = "assignment.expired"
+	DerivedEventAssignmentIntegrate     = "assignment.integrate"
+	DerivedEventAssignmentWorkAvailable = "assignment.work_available"
+	DerivedEventAssignmentBlocker       = "assignment.blocker"
 )
 
 func DeriveEventEnvelopes(req Request, proj view.View, now time.Time) []eventmodel.EventEnvelope {
@@ -101,27 +101,31 @@ func DeriveEventEnvelopes(req Request, proj view.View, now time.Time) []eventmod
 				fmt.Sprintf("Assignment %s expired without progress: %s. Available follow-up options include renew, reassign, split, close, or escalate.", id, scope),
 				[]string{"assignment.write_candidate.observed", "teamwork_signal.write_candidate.observed"},
 			)
+		case owner == principal && blockedProgress(linked) != nil:
+			blocked := blockedProgress(linked)
+			appendDerived(
+				DerivedEventAssignmentBlocker,
+				subject,
+				append([]string{subject}, progressRefs(linked)...),
+				fmt.Sprintf("Assignment %s is blocked: %s", id, blockerSummary(blocked)),
+				[]string{"assignment.write_candidate.observed", "teamwork_signal.write_candidate.observed"},
+			)
 		case owner == principal && len(linked) > 0:
 			appendDerived(
-				DerivedEventAssignmentProgressReady,
+				DerivedEventAssignmentIntegrate,
 				subject,
 				append([]string{subject}, progressRefs(linked)...),
 				fmt.Sprintf("Assignment %s has feedback: %s", id, summarizeProgress(linked)),
 				[]string{"assignment.write_candidate.observed", "teamwork_signal.write_candidate.observed"},
 			)
 		case assignee == principal && !expired && len(linked) == 0:
+			// single cue: the work AND how to report back (absorbs the old
+			// assignment.feedback_needed companion cue)
 			appendDerived(
 				DerivedEventAssignmentWorkAvailable,
 				subject,
 				[]string{subject},
-				fmt.Sprintf("Assignment %s is yours: %s. Expected work: %s", id, scope, itemString(assignment, "expected_work")),
-				nil,
-			)
-			appendDerived(
-				DerivedEventAssignmentFeedbackNeeded,
-				subject,
-				[]string{subject},
-				fmt.Sprintf("Progress or blocker feedback for assignment %s can be recorded as progress_digest with assignment_ref=%s when useful.", id, id),
+				fmt.Sprintf("Assignment %s is yours: %s. Expected work: %s. Report progress, a result, or a blocker with teamwork report --assignment-ref %s when useful.", id, scope, itemString(assignment, "expected_work"), id),
 				[]string{"progress_digest.write_candidate.observed"},
 			)
 		}
@@ -323,6 +327,25 @@ func assignmentExpired(item map[string]any, now time.Time) bool {
 	return now.After(created.Add(ttl))
 }
 
+// blockedProgress returns the newest linked report whose outcome is
+// blocker — the deterministic source of the blocker cue (C6).
+func blockedProgress(items []map[string]any) map[string]any {
+	var blocked map[string]any
+	for _, item := range items {
+		if itemString(item, "outcome") == "blocker" {
+			blocked = item
+		}
+	}
+	return blocked
+}
+
+func blockerSummary(item map[string]any) string {
+	if s := itemString(item, "blocker"); s != "" {
+		return s
+	}
+	return itemString(item, "summary")
+}
+
 func summarizeProgress(items []map[string]any) string {
 	var out []string
 	for _, item := range items {
@@ -368,12 +391,12 @@ func presentationHintForDerivedEventType(eventType string) string {
 		return "signal"
 	case DerivedEventAssignmentExpired:
 		return "expired"
-	case DerivedEventAssignmentProgressReady:
+	case DerivedEventAssignmentIntegrate:
 		return "integrate"
 	case DerivedEventAssignmentWorkAvailable:
 		return "work"
-	case DerivedEventAssignmentFeedbackNeeded:
-		return "feedback"
+	case DerivedEventAssignmentBlocker:
+		return "blocker"
 	default:
 		return ""
 	}

@@ -64,8 +64,8 @@ func TestR1TeamworkEventPackageSchema(t *testing.T) {
 			name:         "progress_digest",
 			risk:         "low",
 			requiredMiss: "empty summary",
-			valid:        payload(map[string]any{"assignment_ref": "asg-1", "feedback_kind": "progress"}, map[string]any{"summary": "Rendered work presentation and tests pass."}, nil),
-			invalid:      payload(map[string]any{"assignment_ref": "asg-1", "feedback_kind": "progress"}, nil, nil),
+			valid:        payload(map[string]any{"assignment_ref": "asg-1", "outcome": "progress"}, map[string]any{"summary": "Rendered work presentation and tests pass."}, nil),
+			invalid:      payload(map[string]any{"assignment_ref": "asg-1", "outcome": "progress"}, nil, nil),
 		},
 	}
 

@@ -85,7 +85,7 @@ func TestSurfaceDeliveriesFeedMilestonesAndCursor(t *testing.T) {
 		r2Assignment("payments/reconcile", "30m", "agent-b@e1", "复核回调重试参数。", "result", "seq:1"))
 	seed("dlv-progress", "progress_digest.write_candidate.observed", r2Progress("阶段推进:契约测试过半。"))
 	seed("dlv-result", "progress_digest.write_candidate.observed", eventmodel.BuildPayload(
-		map[string]any{"feedback_kind": "result"},
+		map[string]any{"outcome": "result"},
 		map[string]any{"summary": "排查完成:根因已定位。", "result": "修复值 30000 已生效。"},
 		nil,
 	))

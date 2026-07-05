@@ -249,7 +249,7 @@ func TestAssembleDerivesRefFromBindingScope(t *testing.T) {
 
 	if _, _, err := rt.API().Ingest("codex@project", contract.ObservationEnvelope{
 		ExternalID: "p1",
-		Event:      contract.Event{Type: "progress_digest.write_candidate.observed", Payload: eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": "team fact"}, nil)},
+		Event:      contract.Event{Type: "progress_digest.write_candidate.observed", Payload: eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": "team fact"}, nil)},
 	}); err != nil {
 		t.Fatalf("ingest: %v", err)
 	}
@@ -289,7 +289,7 @@ func TestAssembleSkipsUnscopedBinding(t *testing.T) {
 	defer rt.Close()
 	if _, _, err := rt.API().Ingest("codex@project", contract.ObservationEnvelope{
 		ExternalID: "p1",
-		Event:      contract.Event{Type: "progress_digest.write_candidate.observed", Payload: eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": "x"}, nil)},
+		Event:      contract.Event{Type: "progress_digest.write_candidate.observed", Payload: eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": "x"}, nil)},
 	}); err != nil {
 		t.Fatalf("ingest: %v", err)
 	}
@@ -399,7 +399,7 @@ func minimalAcceptPayload(id string) map[string]any {
 			map[string]any{"evidence_refs": []any{"profile roster"}},
 		)
 	case "progress_digest":
-		return eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": "projection 80% done"}, nil)
+		return eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": "projection 80% done"}, nil)
 	default:
 		return eventmodel.BuildPayload(nil, map[string]any{"text": "x"}, nil)
 	}

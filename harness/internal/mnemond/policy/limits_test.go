@@ -16,7 +16,7 @@ func TestAppendItemRuleEnforcesMaxPayloadBytes(t *testing.T) {
 	dec, err := r.Evaluate(admission.RuleInput{Event: contract.Event{
 		Type:    cap.ObservedType,
 		Actor:   "codex@project",
-		Payload: eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": strings.Repeat("x", 256)}, nil),
+		Payload: eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": strings.Repeat("x", 256)}, nil),
 	}})
 	if err != nil {
 		t.Fatal(err)
@@ -35,7 +35,7 @@ func TestAppendItemRuleZeroLimitMeansUnbounded(t *testing.T) {
 	dec, err := r.Evaluate(admission.RuleInput{Event: contract.Event{
 		Type:    cap.ObservedType,
 		Actor:   "codex@project",
-		Payload: eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": strings.Repeat("x", 256)}, nil),
+		Payload: eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": strings.Repeat("x", 256)}, nil),
 	}})
 	if err != nil {
 		t.Fatal(err)

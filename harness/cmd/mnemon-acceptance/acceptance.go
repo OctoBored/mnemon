@@ -880,7 +880,7 @@ After both commands succeed, answer with the assignee principal only.`, runID, s
 	addR1Assertion(report, "A7 assignee gets work derived event by scoped render", strings.Contains(workPresentation.Body, "[mnemon:work]") && strings.Contains(workPresentation.Body, assignID), workPresentation.Body)
 
 	prompt = fmt.Sprintf(`Read your governed work context, do the assigned inspection in this workspace, then emit progress_digest.write_candidate.observed with external id progress-%s and payload:
-{"rule":{"assignment_ref":%q,"scope":"r1/real-codex-cluster/local","feedback_kind":"progress"},"narrative":{"summary":"Real Codex appserver acted on the R1 assignment and confirmed the rendered work event was usable.","changed_context":["assignee completed the delegated acceptance work"],"suggested_next":"starter should integrate the result"},"refs":{"evidence_refs":["rendered work event plus real appserver turn"]}}
+{"rule":{"assignment_ref":%q,"scope":"r1/real-codex-cluster/local","outcome":"progress"},"narrative":{"summary":"Real Codex appserver acted on the R1 assignment and confirmed the rendered work event was usable.","changed_context":["assignee completed the delegated acceptance work"],"suggested_next":"starter should integrate the result"},"refs":{"evidence_refs":["rendered work event plus real appserver turn"]}}
 After the command succeeds, answer "progress_digest done".`, runID, assignID)
 	answer, err = runR1Turn(&assigneeAgent, prompt, opts.TurnTimeout)
 	appendAgentAnswer(report, assigneeAgent.principal, answer)
@@ -1013,7 +1013,7 @@ Use the emit command pattern from your developer instructions. Do not message th
 
 	targetPrompt := fmt.Sprintf(`This is the 6B Remote Workspace sync acceptance target turn.
 Read your current governed Mnemon context, then emit progress_digest.write_candidate.observed with external id sync-progress-%s and payload:
-{"rule":{"assignment_ref":%q,"scope":"r1/real-codex-cluster/sync","feedback_kind":"progress"},"narrative":{"summary":"Target real Codex appserver received the assignment through Local Mnemon sync/import and acted from its own derived-event presentation.","changed_context":["6B target completed synced work"],"suggested_next":"source should integrate the synced progress"},"refs":{"evidence_refs":["target local render work derived event after hub sync"]}}
+{"rule":{"assignment_ref":%q,"scope":"r1/real-codex-cluster/sync","outcome":"progress"},"narrative":{"summary":"Target real Codex appserver received the assignment through Local Mnemon sync/import and acted from its own derived-event presentation.","changed_context":["6B target completed synced work"],"suggested_next":"source should integrate the synced progress"},"refs":{"evidence_refs":["target local render work derived event after hub sync"]}}
 After the command succeeds, answer "sync progress written".`, runID, assignmentID)
 	answer, err = runR1Turn(&target.r1CodexAgent, targetPrompt, opts.TurnTimeout)
 	appendSyncAgentAnswer(syncReport, target.principal, answer)

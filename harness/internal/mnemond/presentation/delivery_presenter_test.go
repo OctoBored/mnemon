@@ -14,8 +14,8 @@ func deliverySources() []AcceptedDecisionSource {
 			Resources: []contract.ResourceSnapshot{{
 				Ref: contract.ResourceRef{Kind: "progress_digest", ID: "payments"}, Version: 2,
 				Fields: map[string]any{
-					"feedback_kind": "progress",
-					"summary":       "阶段推进:契约测试过半。",
+					"outcome": "progress",
+					"summary": "阶段推进:契约测试过半。",
 				},
 			}},
 		},
@@ -24,7 +24,7 @@ func deliverySources() []AcceptedDecisionSource {
 			Resources: []contract.ResourceSnapshot{{
 				Ref: contract.ResourceRef{Kind: "progress_digest", ID: "payments"}, Version: 3,
 				Fields: map[string]any{
-					"feedback_kind": "result",
+					"outcome":       "result",
 					"summary":       "排查完成:根因是对账窗口保持配置被误设。\n详情见附件。",
 					"result":        "修复值 30000 已生效。",
 					"artifact_refs": []any{"sha256:" + strings.Repeat("ab", 32)},
@@ -58,8 +58,8 @@ func deliverySources() []AcceptedDecisionSource {
 				Fields: map[string]any{
 					"content": "# Progress",
 					"items": []any{
-						map[string]any{"rule": map[string]any{"feedback_kind": "result"}, "narrative": map[string]any{"summary": "旧结果,已在 cursor 7 投递。"}},
-						map[string]any{"rule": map[string]any{"feedback_kind": "progress"}, "narrative": map[string]any{"summary": "后续小步推进。"}},
+						map[string]any{"rule": map[string]any{"outcome": "result"}, "narrative": map[string]any{"summary": "旧结果,已在 cursor 7 投递。"}},
+						map[string]any{"rule": map[string]any{"outcome": "progress"}, "narrative": map[string]any{"summary": "后续小步推进。"}},
 					},
 				},
 			}},

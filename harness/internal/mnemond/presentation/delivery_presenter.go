@@ -91,7 +91,7 @@ func reduceSnapshot(src AcceptedDecisionSource, snap contract.ResourceSnapshot, 
 	metadata := map[string]string{}
 	switch kind {
 	case "progress_digest":
-		outcome := deliveryField(item, "feedback_kind")
+		outcome := deliveryField(item, "outcome")
 		if outcome != "result" && outcome != "blocker" {
 			return Delivery{}, false
 		}

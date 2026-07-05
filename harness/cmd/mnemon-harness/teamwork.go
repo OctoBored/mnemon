@@ -57,7 +57,7 @@ func init() {
 		Short: "Report an outcome: progress, result, or blocker (--attach uploads artifacts)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if outcome := strings.TrimSpace(teamworkReportOutcome); outcome != "" {
-				controlTeamworkProgressFeedbackKind = outcome
+				controlTeamworkProgressOutcome = outcome
 			}
 			for _, path := range cleanStrings(teamworkReportAttach) {
 				digest, err := teamworkAttachUpload(cmd, path)

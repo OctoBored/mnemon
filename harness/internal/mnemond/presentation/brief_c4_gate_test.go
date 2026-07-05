@@ -19,7 +19,7 @@ func c4Projection() view.View {
 	long := strings.Repeat("对账窗口保持时间被误设为四万三千二百秒需要立即回滚到三万秒并复核回调重试参数", 40)
 	return view.View{Ref: "proj_c4", Digest: "digest_c4", Content: []view.ResourceContent{
 		content("progress_digest", "payments", []any{map[string]any{
-			"id": "pg-c4", "summary": long, "feedback_kind": "progress",
+			"id": "pg-c4", "summary": long, "outcome": "progress",
 		}}),
 	}}
 }

@@ -224,8 +224,8 @@ func TestRenderPresentationScopeAndAssignmentState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(resp.Body, "[mnemon:work]") || !strings.Contains(resp.Body, "[mnemon:feedback]") {
-		t.Fatalf("assignee should receive work + feedback presentations:\n%s", resp.Body)
+	if !strings.Contains(resp.Body, "[mnemon:work]") || !strings.Contains(resp.Body, "teamwork report --assignment-ref") {
+		t.Fatalf("assignee should receive the merged work cue with report-back teaching:\n%s", resp.Body)
 	}
 	// R4 brief: the [context] section IS the principal's own scoped view, so
 	// non-coordination content may appear there; it must never masquerade as
@@ -245,8 +245,8 @@ func TestRenderPresentationScopeAndAssignmentState(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(resp.Body, "[mnemon:work]") || strings.Contains(resp.Body, "[mnemon:feedback]") {
-		t.Fatalf("linked progress should remove assignee work/feedback presentation:\n%s", resp.Body)
+	if strings.Contains(resp.Body, "[mnemon:work]") {
+		t.Fatalf("linked progress should remove the assignee work cue:\n%s", resp.Body)
 	}
 }
 
@@ -262,8 +262,8 @@ func TestDeriveEventEnvelopesSeparateEventModelFromPresentation(t *testing.T) {
 	}}
 
 	envelopes := DeriveEventEnvelopes(reqB, proj, now)
-	if len(envelopes) != 2 {
-		t.Fatalf("expected work/feedback derived envelopes, got %+v", envelopes)
+	if len(envelopes) != 1 {
+		t.Fatalf("expected the single merged work cue, got %+v", envelopes)
 	}
 	got := map[string]eventmodel.EventEnvelope{}
 	for _, env := range envelopes {
@@ -293,14 +293,14 @@ func TestDeriveEventEnvelopesSeparateEventModelFromPresentation(t *testing.T) {
 	if work.Event.Subject != "assignment/asg1" {
 		t.Fatalf("work event must point at assignment subject: %+v", work)
 	}
-	feedback := got[DerivedEventAssignmentFeedbackNeeded]
-	suggested := feedback.Meta["suggested_event_types"].([]string)
+	// the merged cue carries the report-back suggestion itself
+	suggested := work.Meta["suggested_event_types"].([]string)
 	if suggested[0] != "progress_digest.write_candidate.observed" {
-		t.Fatalf("feedback event should name the next observed event: %+v", feedback)
+		t.Fatalf("work cue should name the next observed event: %+v", work)
 	}
 
 	body := PresentEventEnvelopes(envelopes)
-	if !strings.Contains(body, "[mnemon:work]") || !strings.Contains(body, "[mnemon:feedback]") {
+	if !strings.Contains(body, "[mnemon:work]") {
 		t.Fatalf("presentation should retain current hook-facing labels:\n%s", body)
 	}
 }
@@ -335,7 +335,7 @@ func TestProfileCuePolicyFollowsLifecycle(t *testing.T) {
 
 	changed := view.View{Ref: "proj_changed", Digest: "digest_changed", Content: []view.ResourceContent{
 		content("progress_digest", "project", []any{map[string]any{
-			"id": "pg1", "actor": "codex-a@project", "feedback_kind": "progress",
+			"id": "pg1", "actor": "codex-a@project", "outcome": "progress",
 			"changed_context": []any{"learned managed wake constraint"},
 		}}),
 	}}
@@ -500,4 +500,31 @@ func mustTime(t *testing.T, s string) time.Time {
 		t.Fatal(err)
 	}
 	return out
+}
+
+func TestBlockerOutcomeDerivesBlockerCueForOwner(t *testing.T) {
+	now := mustTime(t, "2026-06-24T10:00:00Z")
+	proj := view.View{Ref: "proj_blocker", Digest: "digest_blocker", Content: []view.ResourceContent{
+		content("assignment", "project", []any{map[string]any{
+			"id": "asg-b", "actor": "codex-a@project", "assignee": "codex-b@project",
+			"scope": "payments/reconcile", "expected_work": "复核回调重试参数",
+			"ttl": "30m", "created_at": "2026-06-24T09:45:00Z",
+		}}),
+		content("progress_digest", "project", []any{map[string]any{
+			"id": "pg-b", "actor": "codex-b@project", "assignment_ref": "asg-b",
+			"outcome": "blocker", "summary": "重试参数依赖上游配置", "blocker": "缺少 staging 环境访问权限",
+		}}),
+	}}
+	events := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Host: "codex", Lifecycle: "mid", RenderIntent: IntentBrief}, proj, now)
+	blocker, ok := eventByType(events, DerivedEventAssignmentBlocker)
+	if !ok {
+		t.Fatalf("owner must receive the blocker cue, got %+v", events)
+	}
+	body, _ := eventmodel.PayloadNarrative(blocker.Event.Payload)["body"].(string)
+	if !strings.Contains(body, "缺少 staging 环境访问权限") {
+		t.Fatalf("blocker cue must carry the blocker text: %s", body)
+	}
+	if _, hasIntegrate := eventByType(events, DerivedEventAssignmentIntegrate); hasIntegrate {
+		t.Fatal("a blocked assignment cues blocker, not integrate")
+	}
 }

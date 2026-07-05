@@ -3,7 +3,7 @@ package main
 import eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 
 func cmdR2Progress(summary string) map[string]any {
-	return eventmodel.BuildPayload(map[string]any{"feedback_kind": "progress"}, map[string]any{"summary": summary}, nil)
+	return eventmodel.BuildPayload(map[string]any{"outcome": "progress"}, map[string]any{"summary": summary}, nil)
 }
 
 func cmdR2Assignment(scope, ttl, assignee, expectedWork, expectedFeedback string, evidenceRefs ...any) map[string]any {
