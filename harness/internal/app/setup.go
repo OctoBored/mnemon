@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -157,6 +158,14 @@ func (h *Harness) Setup(ctx context.Context, out, errw io.Writer, opts SetupOpti
 			return res, err
 		}
 		res.Changes = append(res.Changes, "wrote bearer token file "+tokenFile)
+		keyFile := filepath.Join(filepath.Dir(tokenFile), sanitizePrincipal(opts.Principal)+".ed25519")
+		wroteKey, err := writePrincipalKey(keyFile)
+		if err != nil {
+			return res, err
+		}
+		if wroteKey {
+			res.Changes = append(res.Changes, "minted ed25519 principal key "+keyFile)
+		}
 	}
 	if err := access.MergeBinding(bindingFile, binding, tokenRel); err != nil {
 		return res, fmt.Errorf("setup: merge binding: %w", err)
@@ -253,6 +262,25 @@ func (h *Harness) channelBinding(opts SetupOptions) access.ChannelBinding {
 		SubscriptionScope:    scope,
 		IdempotencyNamespace: "host:" + opts.Principal,
 	}
+}
+
+// writePrincipalKey mints the R4 ed25519 signing key for capsule proofs
+// (spec r4-capsule-format-v1 §7: one active key per principal, seed at 0600).
+// Idempotent like the token: an existing key is never rotated by a rerun.
+func writePrincipalKey(path string) (bool, error) {
+	if _, err := os.Stat(path); err == nil {
+		return false, nil
+	}
+	seed := make([]byte, ed25519.SeedSize)
+	if _, err := rand.Read(seed); err != nil {
+		return false, fmt.Errorf("generate principal key: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return false, err
+	}
+	pub := ed25519.NewKeyFromSeed(seed).Public().(ed25519.PublicKey)
+	body := "seed=" + hex.EncodeToString(seed) + "\n" + "pub=" + hex.EncodeToString(pub) + "\n"
+	return true, os.WriteFile(path, []byte(body), 0o600)
 }
 
 func writeTokenFile(path string) error {
