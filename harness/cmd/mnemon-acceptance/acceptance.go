@@ -822,7 +822,7 @@ func runR1CodexLocalScenario(ctx context.Context, opts r1CodexAcceptanceOptions,
 	for i := range agents {
 		prompt := fmt.Sprintf(`Follow the managed Mnemon GUIDE for %s.
 Run a shell command that emits one agent_profile.write_candidate.observed event with external id profile-%02d-%s and payload:
-{"rule":{"actor":%q,"availability":"available","ttl":"30m"},"narrative":{"focus":"R1 real Codex cluster acceptance","context_advantages":["real Codex appserver %02d","workspace-local Mnemon hooks"],"summary":"Agent %02d is available for the R1 teamwork acceptance run"}}
+{"rule":{"actor":%q,"ttl":"30m"},"narrative":{"focus":"R1 real Codex cluster acceptance","context_advantages":["real Codex appserver %02d","workspace-local Mnemon hooks"],"summary":"Agent %02d is available for the R1 teamwork acceptance run"}}
 After the command succeeds, answer "profile done".`, agents[i].principal, i+1, runID, agents[i].principal, i+1, i+1)
 		answer, err := runR1Turn(&agents[i], prompt, opts.TurnTimeout)
 		appendAgentAnswer(report, agents[i].principal, answer)

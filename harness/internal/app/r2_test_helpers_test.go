@@ -36,8 +36,8 @@ func r2DirectionSignal(statement string, evidenceRefs ...any) map[string]any {
 
 func r2AgentProfile(actor, focus, availability, ttl, summary string, contextAdvantages ...any) map[string]any {
 	return eventmodel.BuildPayload(
-		map[string]any{"actor": actor, "availability": availability, "ttl": ttl},
-		map[string]any{"focus": focus, "context_advantages": contextAdvantages, "summary": summary},
+		map[string]any{"actor": actor, "ttl": ttl},
+		map[string]any{"focus": focus, "context_advantages": contextAdvantages, "summary": summary, "availability": availability},
 		nil,
 	)
 }

@@ -240,8 +240,7 @@ func (s prodSimRun) bootstrapProfiles() error {
 		payload := taskSimJSON(map[string]any{
 			"rule": map[string]any{
 				"actor":        agent.principal,
-				"availability": "available",
-				"ttl":          "30m",
+				"ttl": "30m",
 			},
 			"narrative": map[string]any{
 				"focus":              fmt.Sprintf("production-like acceptance node %s", agent.principal),

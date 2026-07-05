@@ -29,7 +29,6 @@ var (
 	controlTeamworkAssignAssignee    string
 	controlTeamworkAssignScope       string
 	controlTeamworkAssignTTL         string
-	controlTeamworkAssignReportOn    []string
 	controlTeamworkAssignWork        string
 	controlTeamworkAssignFeedback    string
 	controlTeamworkAssignRationale   string
@@ -117,10 +116,9 @@ var controlTeamworkAssignCmd = &cobra.Command{
 		}
 		assignmentID := strings.TrimSpace(controlTeamworkAssignID)
 		if assignmentID == "" {
-			assignmentID = defaultShortAssignmentID(controlTeamworkAssignScope, controlTeamworkAssignAssignee, controlTeamworkAssignReportOn, controlTeamworkAssignWork)
+			assignmentID = defaultShortAssignmentID(controlTeamworkAssignScope, controlTeamworkAssignAssignee, controlTeamworkAssignWork)
 		}
 		putString(rule, "assignment_id", assignmentID)
-		putStrings(rule, "report_on", controlTeamworkAssignReportOn)
 		narrative := map[string]any{
 			"expected_work":     controlTeamworkAssignWork,
 			"expected_feedback": controlTeamworkAssignFeedback,
@@ -188,16 +186,16 @@ var controlProfileUpdateCmd = &cobra.Command{
 			return fmt.Errorf("profile update requires at least one --advantage")
 		}
 		rule := map[string]any{
-			"actor":        controlPrincipal,
-			"availability": controlProfileAvailability,
-			"ttl":          controlProfileTTL,
+			"actor": controlPrincipal,
+			"ttl":   controlProfileTTL,
 		}
-		putString(rule, "freshness", controlProfileFreshness)
 		narrative := map[string]any{
 			"focus":              controlProfileFocus,
 			"context_advantages": advantages,
 			"summary":            controlProfileSummary,
+			"availability":       controlProfileAvailability,
 		}
+		putString(narrative, "freshness", controlProfileFreshness)
 		putStrings(narrative, "constraints", controlProfileConstraints)
 		refs := map[string]any{}
 		putStrings(refs, "active_scopes", controlProfileActiveScopes)
@@ -312,7 +310,7 @@ func shortExternalID(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UTC().UnixNano())
 }
 
-func defaultShortAssignmentID(scope, assignee string, reportOn []string, work string) string {
+func defaultShortAssignmentID(scope, assignee, work string) string {
 	base := issueToken(scope, work)
 	if base == "" {
 		base = sanitizeAssignmentToken(strings.TrimSuffix(assignee, "@team"))
@@ -320,7 +318,7 @@ func defaultShortAssignmentID(scope, assignee string, reportOn []string, work st
 	if base == "" {
 		base = "work"
 	}
-	topic := assignmentTopic(reportOn, work)
+	topic := assignmentTopic(nil, work)
 	if topic == "" {
 		topic = "task"
 	}
@@ -443,7 +441,6 @@ func registerAssignFlags(c *cobra.Command) {
 	c.Flags().StringVar(&controlTeamworkAssignAssignee, "assignee", "", "assignee principal")
 	c.Flags().StringVar(&controlTeamworkAssignScope, "scope", "", "assignment scope")
 	c.Flags().StringVar(&controlTeamworkAssignTTL, "ttl", "20m", "assignment TTL")
-	c.Flags().StringArrayVar(&controlTeamworkAssignReportOn, "report-on", nil, "field or concern to report on; may be repeated")
 	c.Flags().StringVar(&controlTeamworkAssignWork, "work", "", "natural-language expected work")
 	c.Flags().StringVar(&controlTeamworkAssignFeedback, "feedback", "progress_digest with result or blocker", "expected feedback")
 	c.Flags().StringVar(&controlTeamworkAssignRationale, "rationale", "", "assignment rationale")

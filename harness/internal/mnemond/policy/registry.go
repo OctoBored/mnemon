@@ -120,10 +120,10 @@ func bulletListRender(title, field string) RenderSpec {
 func agentProfileFields() []FieldSpec {
 	return []FieldSpec{
 		ruleField("actor", required("missing")),
-		ruleField("availability", required("missing"), enum("available|busy|blocked|unknown", "invalid availability")),
-		ruleField("freshness", enum("|fresh|stale", "invalid freshness")),
 		ruleField("ttl", required("missing"), duration()),
 		narrativeField("focus", unsafeText()),
+		narrativeField("availability", unsafeText()),
+		narrativeField("freshness", unsafeText()),
 		narrativeField("context_advantages", listStrings()),
 		narrativeField("constraints", listStrings()),
 		narrativeField("summary", unsafeText()),
@@ -151,7 +151,6 @@ func assignmentFields() []FieldSpec {
 		ruleField("assignee", required("missing")),
 		ruleField("scope", required("empty"), unsafeText()),
 		ruleField("ttl", required("missing"), duration()),
-		ruleField("report_on", listStrings()),
 		narrativeField("expected_work", unsafeText()),
 		narrativeField("expected_feedback", unsafeText()),
 		narrativeField("rationale", unsafeText()),
@@ -241,4 +240,25 @@ func (r *registryClaims) claim(source string, c EventPackage) error {
 	r.names[c.Name] = true
 	r.observed[c.ObservedType], r.proposed[c.ProposedType] = c.Name, c.Name
 	return nil
+}
+
+// StandardRuleZoneFields exposes each standard kind's RULE-zone field names
+// from the same specs the decoders compile from — guard-3's single source
+// (r4-registries §1: decoder-accepted fields ⊆ the field registry).
+func StandardRuleZoneFields() map[string][]string {
+	specs := map[string][]FieldSpec{
+		"agent_profile":   agentProfileFields(),
+		"teamwork_signal": teamworkSignalFields(),
+		"assignment":      assignmentFields(),
+		"progress_digest": progressDigestFields(),
+	}
+	out := map[string][]string{}
+	for kind, fields := range specs {
+		for _, f := range fields {
+			if f.Section == FieldSectionRule {
+				out[kind] = append(out[kind], f.Name)
+			}
+		}
+	}
+	return out
 }

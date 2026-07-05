@@ -535,7 +535,6 @@ func TestControlTeamworkAssignDefaultsStructuredAssignmentID(t *testing.T) {
 	controlTeamworkAssignAssignee = "researcher@team"
 	controlTeamworkAssignScope = "TEA-74 Mnemon surface-flow readiness drill"
 	controlTeamworkAssignTTL = "20m"
-	controlTeamworkAssignReportOn = []string{"root session metadata", "agent run visibility"}
 	controlTeamworkAssignWork = "Validate TEA-74 root session metadata and run visibility."
 	controlTeamworkAssignFeedback = "progress_digest with PASS/FAIL evidence"
 	controlTeamworkAssignEvidence = []string{"TEA-74 root issue is current Multica surface"}
@@ -614,7 +613,6 @@ func resetControlShortCommandVars() {
 	controlTeamworkAssignAssignee = ""
 	controlTeamworkAssignScope = ""
 	controlTeamworkAssignTTL = "20m"
-	controlTeamworkAssignReportOn = nil
 	controlTeamworkAssignWork = ""
 	controlTeamworkAssignFeedback = "progress_digest with result or blocker"
 	controlTeamworkAssignRationale = ""
