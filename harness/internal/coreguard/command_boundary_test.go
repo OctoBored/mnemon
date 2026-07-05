@@ -10,14 +10,19 @@ import (
 )
 
 type commandImportBoundary struct {
-	dir       string
+	dir string
+	// extraDirs are harness-relative package dirs that carry the same
+	// boundary — the R4 S2 absorption moved each binary's logic into an
+	// internal CLI package, and the guard follows the code, not the shim.
+	extraDirs []string
 	forbids   []string
 	rationale string
 }
 
 var commandImportBoundaries = []commandImportBoundary{
 	{
-		dir: "mnemond",
+		dir:       "mnemond",
+		extraDirs: []string{"internal/nodecli"},
 		forbids: []string{
 			"harness/internal/mnemonhub",
 			"harness/internal/productconfig",
@@ -27,7 +32,8 @@ var commandImportBoundaries = []commandImportBoundary{
 		rationale: "mnemond is the local event node, not a remote exchange backend or external display surface",
 	},
 	{
-		dir: "mnemon-hub",
+		dir:       "mnemon-hub",
+		extraDirs: []string{"internal/mnemonhub/hubcli"},
 		forbids: []string{
 			"harness/internal/activationtrace",
 			"harness/internal/app",
@@ -87,7 +93,17 @@ func TestServiceCommandsKeepR2Boundaries(t *testing.T) {
 
 func assertCommandAvoidsForbiddenImports(t *testing.T, boundary commandImportBoundary) {
 	t.Helper()
-	root := filepath.Join("..", "..", "cmd", boundary.dir)
+	roots := []string{filepath.Join("..", "..", "cmd", boundary.dir)}
+	for _, extra := range boundary.extraDirs {
+		roots = append(roots, filepath.Join("..", "..", filepath.FromSlash(extra)))
+	}
+	for _, root := range roots {
+		assertDirAvoidsForbiddenImports(t, root, boundary)
+	}
+}
+
+func assertDirAvoidsForbiddenImports(t *testing.T, root string, boundary commandImportBoundary) {
+	t.Helper()
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -109,7 +125,7 @@ func assertCommandAvoidsForbiddenImports(t *testing.T, boundary commandImportBou
 		return nil
 	})
 	if err != nil {
-		t.Fatalf("walk command %s: %v", boundary.dir, err)
+		t.Fatalf("walk %s: %v", root, err)
 	}
 }
 

@@ -1,4 +1,4 @@
-package main
+package hubcli
 
 import (
 	"bytes"
@@ -43,7 +43,7 @@ func writeToken(t *testing.T, dir, name, token string) {
 func TestHelpDescribesRemoteExchangeBackend(t *testing.T) {
 	for _, args := range [][]string{{"--help"}, {"help"}, {"serve", "--help"}} {
 		var errw bytes.Buffer
-		err := run(context.Background(), args, io.Discard, &errw)
+		err := Run(context.Background(), args, io.Discard, &errw)
 		if err != nil {
 			t.Fatalf("%v help should exit successfully, got %v", args, err)
 		}
@@ -146,7 +146,7 @@ func TestDevSelfsignedGeneratesUsablePair(t *testing.T) {
 		t.Fatalf("key must be 0600: %v %v", info, err)
 	}
 	var out bytes.Buffer
-	if err := run(context.Background(), []string{"--dev-selfsigned", dir}, &out, &out); err != nil {
+	if err := Run(context.Background(), []string{"--dev-selfsigned", dir}, &out, &out); err != nil {
 		t.Fatalf("run --dev-selfsigned: %v", err)
 	}
 	if !strings.Contains(out.String(), certPath) || !strings.Contains(out.String(), keyPath) {
@@ -156,13 +156,13 @@ func TestDevSelfsignedGeneratesUsablePair(t *testing.T) {
 
 func TestRunFlagValidation(t *testing.T) {
 	var out bytes.Buffer
-	if err := run(context.Background(), nil, &out, &out); err == nil || !strings.Contains(err.Error(), "--store and --replicas") {
+	if err := Run(context.Background(), nil, &out, &out); err == nil || !strings.Contains(err.Error(), "--store and --replicas") {
 		t.Fatalf("missing flags must fail: %v", err)
 	}
-	if err := run(context.Background(), []string{"--store", "x.db", "--replicas", "r.json", "--tls-cert", "c.pem"}, &out, &out); err == nil || !strings.Contains(err.Error(), "set together") {
+	if err := Run(context.Background(), []string{"--store", "x.db", "--replicas", "r.json", "--tls-cert", "c.pem"}, &out, &out); err == nil || !strings.Contains(err.Error(), "set together") {
 		t.Fatalf("lone --tls-cert must fail: %v", err)
 	}
-	if err := run(context.Background(), []string{"serve", "--store", "x.db", "--replicas", "r.json", "--tls-cert", "c.pem"}, &out, &out); err == nil || !strings.Contains(err.Error(), "set together") {
+	if err := Run(context.Background(), []string{"serve", "--store", "x.db", "--replicas", "r.json", "--tls-cert", "c.pem"}, &out, &out); err == nil || !strings.Contains(err.Error(), "set together") {
 		t.Fatalf("serve alias must parse service flags: %v", err)
 	}
 }
@@ -188,7 +188,7 @@ func TestMnemonHubServesSyncOverTLS(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() {
-		done <- run(ctx, []string{
+		done <- Run(ctx, []string{
 			"--addr", "127.0.0.1:0",
 			"--store", filepath.Join(work, "hub", "hub.db"),
 			"--replicas", replicasPath,

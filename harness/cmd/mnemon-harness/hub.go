@@ -25,6 +25,7 @@ import (
 	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemonhub/exchange"
+	"github.com/mnemon-dev/mnemon/harness/internal/mnemonhub/hubcli"
 	"github.com/mnemon-dev/mnemon/harness/internal/productconfig"
 	"github.com/spf13/cobra"
 )
@@ -66,6 +67,20 @@ var hubDoctorCmd = &cobra.Command{
 	Use:   "doctor",
 	Short: "Report harness MnemonHub connection readiness",
 	RunE:  runHubDoctor,
+}
+
+// hubServeCmd absorbs the mnemon-hub binary (R4 S2): the self-hosted hub
+// boot face as a subcommand. Flag parsing stays inside hubcli, so args pass
+// through verbatim; the hub remains its own trust domain (hubcli's import
+// boundary is pinned by the mnemonhub boundary test).
+var hubServeCmd = &cobra.Command{
+	Use:                "serve",
+	Short:              "Serve a self-hosted MnemonHub (Remote Workspace exchange) in the foreground",
+	DisableFlagParsing: true,
+	SilenceUsage:       true,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return hubcli.Run(cmd.Context(), args, cmd.OutOrStdout(), cmd.ErrOrStderr())
+	},
 }
 
 type commandRunner func(context.Context, commandInvocation) (commandResult, error)
@@ -137,7 +152,7 @@ func init() {
 	hubBootstrapCloudflareCmd.Flags().DurationVar(&hubCloudflareTimeout, "timeout", 2*time.Minute, "bootstrap command timeout")
 	hubBootstrapCloudflareCmd.Flags().BoolVar(&hubCloudflareNoDeploy, "no-deploy", false, "prepare local config without running wrangler deploy or smoke")
 	hubBootstrapCmd.AddCommand(hubBootstrapCloudflareCmd)
-	hubCmd.AddCommand(hubBootstrapCmd, hubDoctorCmd)
+	hubCmd.AddCommand(hubBootstrapCmd, hubDoctorCmd, hubServeCmd)
 	hubCmd.GroupID = groupSpine
 	rootCmd.AddCommand(hubCmd)
 }

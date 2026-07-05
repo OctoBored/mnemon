@@ -204,3 +204,15 @@ func mustParseScopesForTest(t *testing.T, values []string) []contract.ResourceRe
 	}
 	return scopes
 }
+
+func TestHubServeAbsorbsStandaloneBinary(t *testing.T) {
+	for _, c := range hubCmd.Commands() {
+		if c.Name() == "serve" {
+			if !c.DisableFlagParsing {
+				t.Fatal("hub serve must pass flags through to hubcli verbatim")
+			}
+			return
+		}
+	}
+	t.Fatal("hub group must expose the absorbed serve subcommand")
+}
