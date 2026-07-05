@@ -26,6 +26,7 @@ type AuditRecord struct {
 	DecisionHead           string
 	Status                 Status
 	BodyChars              int
+	TruncatedFromChars     int `json:",omitempty"` // pre-truncation byte length; 0 = not truncated
 	PresentationCounts     map[string]int
 	EventCounts            map[string]int
 	CreatedAt              string

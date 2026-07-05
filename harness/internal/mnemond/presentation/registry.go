@@ -37,11 +37,7 @@ func NewPresenterRegistry(presenters ...Presenter) PresenterRegistry {
 }
 
 func DefaultPresenterRegistry() PresenterRegistry {
-	return NewPresenterRegistry(
-		teamworkEventsPresenter{},
-		contextPacketPresenter{},
-		payloadContractPresenter{},
-	)
+	return NewPresenterRegistry(briefPresenter{})
 }
 
 func (r PresenterRegistry) Present(req Request, proj view.View, now time.Time) (PresentationBody, error) {

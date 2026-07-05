@@ -85,18 +85,18 @@ func TestMinimalTeamworkLoopThroughRenderPresentations(t *testing.T) {
 		map[string]any{"evidence_refs": []any{"signal sig-r1"}},
 	))
 
-	work := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
+	work := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if !strings.Contains(work.Body, "[mnemon:work]") || !strings.Contains(work.Body, "asg-r1") || !strings.Contains(work.Body, "[mnemon:feedback]") {
 		t.Fatalf("B must see work + feedback presentation for assignment:\n%s", work.Body)
 	}
 
 	observe(clientB, "progress-r1", "progress_digest.write_candidate.observed",
 		r2ProgressFor("asg-r1", "harness/r1/render", "review complete; render endpoint is usable", "render endpoint test"))
-	integrate := postRender(t, srv.URL, "tok-a", presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
+	integrate := postRender(t, srv.URL, "tok-a", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if !strings.Contains(integrate.Body, "[mnemon:integrate]") || !strings.Contains(integrate.Body, "review complete") {
 		t.Fatalf("A must see integration presentation after B feedback:\n%s", integrate.Body)
 	}
-	afterFeedback := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
+	afterFeedback := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if strings.Contains(afterFeedback.Body, "Assignment asg-r1 is yours") {
 		t.Fatalf("linked progress must remove B work presentation:\n%s", afterFeedback.Body)
 	}
@@ -108,11 +108,11 @@ func TestMinimalTeamworkLoopThroughRenderPresentations(t *testing.T) {
 		map[string]any{"evidence_refs": []any{"TTL branch"}},
 	))
 	renderNow = mustRenderHTTPTime(t, "2026-06-24T10:20:00Z")
-	expired := postRender(t, srv.URL, "tok-a", presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
+	expired := postRender(t, srv.URL, "tok-a", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if !strings.Contains(expired.Body, "[mnemon:expired]") || !strings.Contains(expired.Body, "asg-exp") {
 		t.Fatalf("A must see expired presentation for unreported assignment:\n%s", expired.Body)
 	}
-	assigneeExpired := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
+	assigneeExpired := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if strings.Contains(assigneeExpired.Body, "[mnemon:expired]") {
 		t.Fatalf("B must not see originator expired presentation:\n%s", assigneeExpired.Body)
 	}

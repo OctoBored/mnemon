@@ -224,7 +224,7 @@ func TestControlRenderPrintsDerivedEventPresentationBody(t *testing.T) {
 	controlPrincipal = "codex-b@project"
 	controlToken = "tok-b"
 	controlTokenFile = ""
-	controlRenderIntent = presentation.IntentTeamworkEvents
+	controlRenderIntent = presentation.IntentBrief
 	controlRenderLifecycle = "remind"
 	controlRenderSurface = "hook"
 	controlRenderHost = ""
@@ -273,7 +273,7 @@ func TestControlRenderCarriesHostSessionScope(t *testing.T) {
 	controlTokenFile = ""
 
 	_, err := controlRender(presentation.Request{
-		RenderIntent: presentation.IntentTeamworkEvents,
+		RenderIntent: presentation.IntentBrief,
 		Lifecycle:    "remind",
 		Surface:      "hook",
 		Host:         "multica",

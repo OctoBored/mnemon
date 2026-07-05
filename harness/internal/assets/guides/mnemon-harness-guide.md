@@ -17,8 +17,7 @@ Useful commands:
 
 ```bash
 . .mnemon/harness/local/env.sh
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" view --intent context.packet
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" view --intent teamwork.events
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" view
 "${MNEMON_HARNESS_BIN:-mnemon-harness}" recall "<keyword>"
 "${MNEMON_HARNESS_BIN:-mnemon-harness}" loop packages
 "${MNEMON_HARNESS_BIN:-mnemon-harness}" loop schema --type <kind>

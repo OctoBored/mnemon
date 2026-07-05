@@ -3,22 +3,16 @@ package presentation
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/presentation/view"
 )
 
-type contextPacketPresenter struct{}
-
-func (contextPacketPresenter) Intent() string { return IntentContextPacket }
-
-func (contextPacketPresenter) Present(req Request, proj view.View, _ time.Time) (PresentationBody, error) {
-	return PresentationBody{Body: BuildContextPacket(req, proj)}, nil
-}
-
+// BuildContextPacket renders the scoped-view summary that becomes the
+// brief's [mnemon:context] section body (the section header is owned by the
+// brief presenter).
 func BuildContextPacket(_ Request, proj view.View) string {
 	var lines []string
-	lines = append(lines, "[mnemon:context]", fmt.Sprintf("View %s digest %s", proj.Ref, proj.Digest))
+	lines = append(lines, fmt.Sprintf("View %s digest %s", proj.Ref, proj.Digest))
 	for _, content := range proj.Content {
 		kind := string(content.Ref.Kind)
 		items := resourceItems(content)
@@ -37,7 +31,7 @@ func BuildContextPacket(_ Request, proj view.View) string {
 			lines = append(lines, fmt.Sprintf("- %s/%s: %s", kind, contextItemID(item), summary))
 		}
 	}
-	if len(lines) == 2 {
+	if len(lines) == 1 {
 		return ""
 	}
 	return strings.Join(lines, "\n")

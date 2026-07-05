@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
@@ -20,12 +21,6 @@ const (
 	StatusFallback Status = "fallback"
 	StatusEmpty    Status = "empty"
 	StatusDenied   Status = "denied"
-)
-
-const (
-	IntentContextPacket   = "context.packet"
-	IntentTeamworkEvents  = "teamwork.events"
-	IntentPayloadContract = "payload.contract"
 )
 
 type Request struct {
@@ -84,8 +79,10 @@ func (r Renderer) RenderPresentation(ctx context.Context, req Request, proj view
 		return Response{SchemaVersion: 1, Status: StatusDenied, PresentationViewDigest: proj.Digest}, nil
 	}
 	body, events := BuildBodyAndEventEnvelopes(req, proj, now)
+	truncatedFrom := 0
 	if req.Budget.MaxChars > 0 && len(body) > req.Budget.MaxChars {
-		body = body[:req.Budget.MaxChars]
+		truncatedFrom = len(body)
+		body = truncateRuneSafe(body, req.Budget.MaxChars)
 	}
 	resp := Response{
 		SchemaVersion:          1,
@@ -110,11 +107,27 @@ func (r Renderer) RenderPresentation(ctx context.Context, req Request, proj view
 	}
 	resp.AuditID = auditID(req, resp)
 	if r.AuditSink != nil {
-		if err := r.AuditSink.WriteRenderAudit(ctx, AuditRecordFrom(req, resp, presentationSectionCounts(body), eventEnvelopeCounts(events))); err != nil {
+		record := AuditRecordFrom(req, resp, presentationSectionCounts(body), eventEnvelopeCounts(events))
+		record.TruncatedFromChars = truncatedFrom
+		if err := r.AuditSink.WriteRenderAudit(ctx, record); err != nil {
 			return Response{}, err
 		}
 	}
 	return resp, nil
+}
+
+// truncateRuneSafe cuts body to at most max bytes WITHOUT splitting a UTF-8
+// character (C4: a CJK brief must never truncate into replacement bytes).
+// The truncation fact rides the render audit — E1-era truncation left no trace.
+func truncateRuneSafe(body string, max int) string {
+	if max <= 0 || len(body) <= max {
+		return body
+	}
+	cut := max
+	for cut > 0 && !utf8.RuneStart(body[cut]) {
+		cut--
+	}
+	return body[:cut]
 }
 
 func digest(body string) string {

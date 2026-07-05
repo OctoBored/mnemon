@@ -85,7 +85,7 @@ run_host() {
 		"$MH" control observe --addr "$addr" --principal "$principal" --token-file "$tok" \
 			--type progress_digest.write_candidate.observed --external-id m2 \
 			--payload '{"rule":{"feedback_kind":"progress"},"narrative":{"summary":"E2E render context '"$host"'"}}' >/dev/null
-		out="$("$MH" control render --addr "$addr" --principal "$principal" --token-file "$tok" --intent context.packet)"
+		out="$("$MH" view --addr "$addr" --principal "$principal" --token-file "$tok")"
 		case "$out" in *"E2E render context $host"*) ;; *) echo "render context missing progress: $out"; exit 1 ;; esac
 
 		# setup no-clobber: hand-edit the generic lifecycle hook, rerun setup, assert the edit is preserved.
@@ -803,7 +803,7 @@ run_subscription() {
 			case "$out" in *ticked=true*) ;; *) echo "sub observe $n: $out"; exit 1 ;; esac
 		done
 		# the context packet is budgeted to digest-only: the newest entry present, older ones dropped.
-		out="$("$MH" control render --addr "http://$addr" --principal codex@project --token-file "$tok" --intent context.packet)"
+		out="$("$MH" view --addr "http://$addr" --principal codex@project --token-file "$tok")"
 		case "$out" in *"budget entry 3"*) ;; *) echo "digest-only context missing newest entry: $out"; exit 1 ;; esac
 		case "$out" in *"budget entry 1"*|*"budget entry 2"*) echo "digest-only context leaked older entries: $out"; exit 1 ;; esac
 		# AUTHORITY preserved (A4): the un-budgeted pull still reports the progress event subject present —

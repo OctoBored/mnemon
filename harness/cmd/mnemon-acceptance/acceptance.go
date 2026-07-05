@@ -741,7 +741,7 @@ func r1AcceptanceDeveloperInstructions(principal string) string {
 Follow the managed Mnemon GUIDE and the mnemon-observe skill. Read governed context when it is relevant, then write governed events through Local Mnemon from the shell.
 Use these patterns from the workspace root:
   . .mnemon/harness/local/env.sh
-  mnemon-harness view --addr "$MNEMON_CONTROL_ADDR" --principal "$MNEMON_CONTROL_PRINCIPAL" --token-file "$MNEMON_CONTROL_TOKEN_FILE" --intent teamwork.events --lifecycle remind --surface agent
+  mnemon-harness view --addr "$MNEMON_CONTROL_ADDR" --principal "$MNEMON_CONTROL_PRINCIPAL" --token-file "$MNEMON_CONTROL_TOKEN_FILE" --lifecycle remind --surface agent
   mnemon-harness recall "<keyword>" --addr "$MNEMON_CONTROL_ADDR" --principal "$MNEMON_CONTROL_PRINCIPAL" --token-file "$MNEMON_CONTROL_TOKEN_FILE"
   mnemon-harness emit --addr "$MNEMON_CONTROL_ADDR" --principal "$MNEMON_CONTROL_PRINCIPAL" --token-file "$MNEMON_CONTROL_TOKEN_FILE" --schema <kind> --rule <field>=<value> --narrative <field>=<value> --external-id <id>
 Do not edit files under .mnemon directly. Do not invent assignment_status or assignment_expired. Keep final answers brief and name the governed event you wrote.`, principal)
@@ -846,7 +846,7 @@ After the command succeeds, answer "profile done".`, agents[i].principal, i+1, r
 	prompt := fmt.Sprintf(`You are the starter for the R1 teamwork acceptance.
 Read current governed teamwork context with:
   . .mnemon/harness/local/env.sh
-  mnemon-harness view --addr "$MNEMON_CONTROL_ADDR" --principal "$MNEMON_CONTROL_PRINCIPAL" --token-file "$MNEMON_CONTROL_TOKEN_FILE" --intent teamwork.events --lifecycle remind --surface agent
+  mnemon-harness view --addr "$MNEMON_CONTROL_ADDR" --principal "$MNEMON_CONTROL_PRINCIPAL" --token-file "$MNEMON_CONTROL_TOKEN_FILE" --lifecycle remind --surface agent
 Then emit a teamwork_signal.write_candidate.observed event with external id signal-%s and payload:
 {"rule":{"signal_id":%q,"scope":"r1/real-codex-cluster/local","ttl":"30m"},"narrative":{"statement":"Need another real Codex appserver to complete an R1 acceptance work item.","why_teamwork":"five fresh agent profiles are available; delegation verifies the R1 teamwork event loop"},"refs":{"evidence_refs":["real-codex-cluster acceptance"]}}
 Then choose one teammate other than yourself and emit assignment.write_candidate.observed with external id assignment-%s and payload:
@@ -1396,7 +1396,7 @@ func acceptanceItemString(item map[string]any, key string) string {
 }
 
 func renderR1DerivedEventPresentation(controlURL, token string) (presentation.Response, error) {
-	body, _ := json.Marshal(presentation.Request{RenderIntent: presentation.IntentTeamworkEvents, Lifecycle: "remind", Surface: "hook"})
+	body, _ := json.Marshal(presentation.Request{RenderIntent: presentation.IntentBrief, Lifecycle: "remind", Surface: "hook"})
 	req, err := http.NewRequest(http.MethodPost, strings.TrimRight(controlURL, "/")+"/render", bytes.NewReader(body))
 	if err != nil {
 		return presentation.Response{}, err

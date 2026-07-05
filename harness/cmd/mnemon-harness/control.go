@@ -299,7 +299,7 @@ func registerConnectionFlags(c *cobra.Command) {
 // registerRenderFlags binds the boundary-brief render flags shared by the v2
 // `view` verb and the deprecated `control render` face.
 func registerRenderFlags(c *cobra.Command) {
-	c.Flags().StringVar(&controlRenderIntent, "intent", presentation.IntentTeamworkEvents, "render intent")
+	c.Flags().StringVar(&controlRenderIntent, "intent", presentation.IntentBrief, "render intent")
 	c.Flags().StringVar(&controlRenderLifecycle, "lifecycle", "remind", "host lifecycle")
 	c.Flags().StringVar(&controlRenderSurface, "surface", "hook", "host surface")
 	c.Flags().StringVar(&controlRenderHost, "host", envDefault("MNEMON_RENDER_HOST", ""), "host integration name")

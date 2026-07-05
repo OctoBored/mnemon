@@ -19,15 +19,6 @@ const (
 	DerivedEventAssignmentFeedbackNeeded = "assignment.feedback_needed"
 )
 
-type teamworkEventsPresenter struct{}
-
-func (teamworkEventsPresenter) Intent() string { return IntentTeamworkEvents }
-
-func (teamworkEventsPresenter) Present(req Request, proj view.View, now time.Time) (PresentationBody, error) {
-	events := DeriveEventEnvelopes(req, proj, now)
-	return PresentationBody{Body: PresentEventEnvelopes(events), Events: events}, nil
-}
-
 func DeriveEventEnvelopes(req Request, proj view.View, now time.Time) []eventmodel.EventEnvelope {
 	principal := string(req.Principal)
 	if principal == "" {
@@ -244,7 +235,7 @@ func shouldRenderProfileCue(req Request, items map[string][]map[string]any, prin
 		return false
 	}
 	switch req.RenderIntent {
-	case IntentTeamworkEvents:
+	case IntentBrief:
 		switch strings.TrimSpace(req.Lifecycle) {
 		case "prime", "compact":
 			return true

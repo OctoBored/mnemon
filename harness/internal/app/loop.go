@@ -132,7 +132,6 @@ Then render the boundary brief, or search your own governed store:
       --addr "$MNEMON_CONTROL_ADDR" \
       --principal "$MNEMON_CONTROL_PRINCIPAL" \
       --token-file "$MNEMON_CONTROL_TOKEN_FILE" \
-      --intent context.packet
 
     mnemon-harness recall "<keyword>" \
       --addr "$MNEMON_CONTROL_ADDR" \

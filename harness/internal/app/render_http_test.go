@@ -61,7 +61,7 @@ func TestRenderEndpointUsesAuthenticatedScopedProjection(t *testing.T) {
 		t.Fatalf("seed assignment: rec=%+v err=%v", rec, err)
 	}
 
-	resp := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
+	resp := postRender(t, srv.URL, "tok-b", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if resp.Status != presentation.StatusOK || !strings.Contains(resp.Body, "[mnemon:work]") {
 		t.Fatalf("render endpoint should return assignee work presentation: %#v", resp)
 	}
@@ -94,7 +94,7 @@ func TestRenderEndpointRequiresRenderVerb(t *testing.T) {
 	srv := httptest.NewServer(NewLocalHTTPHandler(rt, access.TokenAuthenticator{Tokens: loaded.Tokens}, bindings, presentation.Renderer{}, nil))
 	defer srv.Close()
 
-	body, _ := json.Marshal(presentation.Request{RenderIntent: presentation.IntentTeamworkEvents})
+	body, _ := json.Marshal(presentation.Request{RenderIntent: presentation.IntentBrief})
 	req, err := http.NewRequest(http.MethodPost, srv.URL+"/render", bytes.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
@@ -149,7 +149,7 @@ func TestRenderEndpointAppliesBindingBudgetWithoutReducingAuthority(t *testing.T
 		}
 	}
 
-	packet := postRender(t, srv.URL, "tok", presentation.Request{RenderIntent: presentation.IntentContextPacket})
+	packet := postRender(t, srv.URL, "tok", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if !strings.Contains(packet.Body, "render budget entry 3") {
 		t.Fatalf("digest-only render packet must keep newest entry:\n%s", packet.Body)
 	}
@@ -206,7 +206,7 @@ func TestEventDataflowReachesContextPresenter(t *testing.T) {
 		t.Fatalf("event must materialize through mnemond state: v=%d fields=%+v err=%v", v, fields, err)
 	}
 
-	packet := postRender(t, srv.URL, "tok", presentation.Request{RenderIntent: presentation.IntentContextPacket})
+	packet := postRender(t, srv.URL, "tok", presentation.Request{RenderIntent: presentation.IntentBrief})
 	if packet.Status != presentation.StatusOK ||
 		!strings.Contains(packet.Body, "[mnemon:context]") ||
 		!strings.Contains(packet.Body, "presenter registry") {

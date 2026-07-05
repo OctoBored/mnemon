@@ -23,7 +23,7 @@ func TestRenderThinHookIsGenericLifecycleShim(t *testing.T) {
 		`GUIDE_PATH="${PROJECT_ROOT}/.mnemon/harness/local/guide.md"`,
 		"Evaluate whether governed context should be read before responding.",
 		`grep -q '\[mnemon:wake\]'`,
-		`--intent teamwork.events --lifecycle remind --surface hook`,
+		`--lifecycle remind --surface hook`,
 		`"systemMessage": "${SYSTEM_MESSAGE}"`,
 	} {
 		if !strings.Contains(body, want) {
@@ -75,7 +75,7 @@ set -euo pipefail
 if [[ "$*" == *"--token-file"* ]]; then
   exit 7
 fi
-if [[ "$*" != *"view"* || "$*" != *"--intent teamwork.events"* ]]; then
+if [[ "$*" != *"view"* || "$*" != *"--lifecycle remind"* ]]; then
   exit 8
 fi
 printf '[mnemon:work]\nassignment addressed to this principal\n'
