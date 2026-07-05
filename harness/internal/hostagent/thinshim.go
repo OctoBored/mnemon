@@ -74,29 +74,6 @@ func RenderThinHook(fsys fs.FS, opts ThinHookOptions) (string, error) {
 			`}`,
 			`JSON`,
 		)
-	case dialectCodexContinue:
-		add(jsonEscapeFunction)
-		add(
-			`SYSTEM_MESSAGE="$(json_escape "${HOOK_BODY}")"`,
-			`cat <<JSON`,
-			`{`,
-			`  "continue": false,`,
-			`  "stopReason": "${SYSTEM_MESSAGE}",`,
-			`  "systemMessage": "${SYSTEM_MESSAGE}"`,
-			`}`,
-			`JSON`,
-		)
-	case dialectClaudeDecision:
-		add(jsonEscapeFunction)
-		add(
-			`REASON="$(json_escape "${HOOK_BODY}")"`,
-			`cat <<JSON`,
-			`{`,
-			`  "decision": "block",`,
-			`  "reason": "${REASON}"`,
-			`}`,
-			`JSON`,
-		)
 	default:
 		return "", fmt.Errorf("%s/%s: unsupported thin hook dialect %q", opts.Host, opts.Timing, dialect)
 	}
