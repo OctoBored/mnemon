@@ -528,3 +528,29 @@ func TestBlockerOutcomeDerivesBlockerCueForOwner(t *testing.T) {
 		t.Fatal("a blocked assignment cues blocker, not integrate")
 	}
 }
+
+func TestOverlapCueExposesConcurrentWorkWithoutArbitrating(t *testing.T) {
+	now := mustTime(t, "2026-06-24T10:00:00Z")
+	proj := view.View{Ref: "proj_overlap", Digest: "digest_overlap", Content: []view.ResourceContent{
+		content("teamwork_signal", "project", []any{
+			map[string]any{"id": "poc-inventory", "actor": "codex-a@project", "statement": "库存偏差 PoC 触及对账表 schema",
+				"rule": map[string]any{"scope": "ledger/reconcile-schema"}},
+			map[string]any{"id": "poc-refund", "actor": "codex-b@project", "statement": "退款风控 PoC 触及对账表 schema",
+				"rule": map[string]any{"scope": "ledger/reconcile-schema"}},
+		}),
+	}}
+	events := DeriveEventEnvelopes(Request{Principal: "codex-a@project", Host: "codex", Lifecycle: "mid", RenderIntent: IntentBrief}, proj, now)
+	overlap, ok := eventByType(events, DerivedEventTeamworkOverlap)
+	if !ok {
+		t.Fatalf("same-scope concurrent work must derive the overlap cue, got %+v", events)
+	}
+	body, _ := eventmodel.PayloadNarrative(overlap.Event.Payload)["body"].(string)
+	if !strings.Contains(body, "scope 相同") || !strings.Contains(body, "poc-inventory") || !strings.Contains(body, "poc-refund") {
+		t.Fatalf("overlap cue must name both items and the criterion: %s", body)
+	}
+	// a bystander principal gets no overlap noise
+	bystander := DeriveEventEnvelopes(Request{Principal: "codex-c@project", Host: "codex", Lifecycle: "mid", RenderIntent: IntentBrief}, proj, now)
+	if _, leaked := eventByType(bystander, DerivedEventTeamworkOverlap); leaked {
+		t.Fatal("overlap cue must go to participants only")
+	}
+}

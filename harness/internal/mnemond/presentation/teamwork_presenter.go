@@ -17,6 +17,7 @@ const (
 	DerivedEventAssignmentIntegrate     = "assignment.integrate"
 	DerivedEventAssignmentWorkAvailable = "assignment.work_available"
 	DerivedEventAssignmentBlocker       = "assignment.blocker"
+	DerivedEventTeamworkOverlap         = "teamwork.overlap"
 )
 
 func DeriveEventEnvelopes(req Request, proj view.View, now time.Time) []eventmodel.EventEnvelope {
@@ -131,7 +132,67 @@ func DeriveEventEnvelopes(req Request, proj view.View, now time.Time) []eventmod
 		}
 	}
 
+	appendOverlapCues(items, principal, appendDerived)
+
 	return events
+}
+
+// appendOverlapCues exposes concurrent-work overlap (Q4, C7): two ACTIVE
+// coordination items from DIFFERENT actors overlap when their scopes match
+// or their evidence/artifact refs intersect. The cue EXPOSES, it never
+// arbitrates — the integrator's ruling lands as its own record.
+func appendOverlapCues(items map[string][]map[string]any, principal string, appendDerived func(eventType, subject string, causedBy []string, body string, suggested []string)) {
+	var work []map[string]any
+	work = append(work, items["teamwork_signal"]...)
+	work = append(work, items["assignment"]...)
+	for i := 0; i < len(work); i++ {
+		for j := i + 1; j < len(work); j++ {
+			a, b := work[i], work[j]
+			actorA, actorB := itemString(a, "actor"), itemString(b, "actor")
+			if actorA == "" || actorA == actorB {
+				continue
+			}
+			// the cue goes to participants only
+			if principal != actorA && principal != actorB &&
+				principal != itemString(a, "assignee") && principal != itemString(b, "assignee") {
+				continue
+			}
+			criterion := overlapCriterion(a, b)
+			if criterion == "" {
+				continue
+			}
+			idA, idB := teamworkItemID(a), teamworkItemID(b)
+			subject := "overlap/" + idA + "+" + idB
+			appendDerived(
+				DerivedEventTeamworkOverlap,
+				subject,
+				[]string{idA, idB},
+				fmt.Sprintf("并行工作重叠暴露: %s 与 %s(判据: %s)。整合裁决请以一条新记录落盘, 不要就地改写任一方。", idA, idB, criterion),
+				[]string{"progress_digest.write_candidate.observed"},
+			)
+		}
+	}
+}
+
+func overlapCriterion(a, b map[string]any) string {
+	scopeA, scopeB := itemString(a, "scope"), itemString(b, "scope")
+	if scopeA != "" && scopeA == scopeB {
+		return "scope 相同(" + scopeA + ")"
+	}
+	refsA := append(itemStringList(a, "evidence_refs"), itemStringList(a, "artifact_refs")...)
+	refsB := append(itemStringList(b, "evidence_refs"), itemStringList(b, "artifact_refs")...)
+	seen := map[string]bool{}
+	for _, ref := range refsA {
+		if ref != "" {
+			seen[ref] = true
+		}
+	}
+	for _, ref := range refsB {
+		if seen[ref] {
+			return "引用交集(" + ref + ")"
+		}
+	}
+	return ""
 }
 
 func multicaHubRender(req Request) bool {
@@ -397,6 +458,8 @@ func presentationHintForDerivedEventType(eventType string) string {
 		return "work"
 	case DerivedEventAssignmentBlocker:
 		return "blocker"
+	case DerivedEventTeamworkOverlap:
+		return "overlap"
 	default:
 		return ""
 	}
