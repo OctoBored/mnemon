@@ -42,7 +42,7 @@ func TestRootHelpUsesLocalFirstProductSurface(t *testing.T) {
 
 func TestPublicRootCommandsMatchProductSurface(t *testing.T) {
 	got := publicRootCommandNames()
-	want := []string{"agent", "config", "connect", "doctor", "emit", "hub", "node", "recall", "remote", "setup", "status", "teamwork", "verify", "view", "watch"}
+	want := []string{"agent", "config", "connect", "doctor", "emit", "hub", "node", "pull", "push", "recall", "remote", "setup", "status", "teamwork", "verify", "view", "watch"}
 	sort.Strings(want)
 	if strings.Join(got, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("public root commands mismatch:\ngot:  %v\nwant: %v", got, want)

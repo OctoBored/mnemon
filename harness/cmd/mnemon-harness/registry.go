@@ -26,7 +26,9 @@ var commandEndpoints = map[string]bool{
 	"PUT/GET /blobs/{digest}": true,
 	"GET /surface/deliveries": true,
 	"GET /status":             true,
-	"sync wire (hub)":         true, // S4 flips this row set to POST/GET /capsules (hub)
+	"sync wire (hub)":         true, // legacy rows die at S4d completion
+	"POST /capsules (hub)":    true,
+	"GET /capsules (hub)":     true,
 }
 
 var commandRegistry = []CommandSpec{
@@ -53,7 +55,9 @@ var commandRegistry = []CommandSpec{
 	{Path: "node wake", Audience: "operator", Edge: "node", Endpoint: "POST /render"},
 
 	// federation
-	{Path: "hub serve", Audience: "operator", Edge: "federate", Endpoint: "sync wire (hub)"},
+	{Path: "push", Audience: "operator", Edge: "federate", Endpoint: "POST /capsules (hub)"},
+	{Path: "pull", Audience: "operator", Edge: "federate", Endpoint: "GET /capsules (hub)"},
+	{Path: "hub serve", Audience: "operator", Edge: "federate", Endpoint: "POST /capsules (hub)"},
 	{Path: "hub doctor", Audience: "operator", Edge: "federate", Endpoint: "-"},
 	{Path: "hub bootstrap cloudflare", Audience: "operator", Edge: "federate", Endpoint: "-"},
 	{Path: "remote add", Audience: "operator", Edge: "federate", Endpoint: "-"},

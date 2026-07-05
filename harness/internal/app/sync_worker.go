@@ -35,6 +35,9 @@ type SyncWorkerOptions struct {
 	// Catalog is the boot-resolved event package registry the pull import derives its kind→observation
 	// mapping from (descriptor-derived, PD6). nil falls back to the embedded catalog.
 	Catalog policy.Registry
+	// Direction limits a MANUAL pass: "push" | "pull" | "" (both). The
+	// public push/pull verbs run one filtered pass through the same code.
+	Direction string
 }
 
 const defaultSyncWorkerInterval = 30 * time.Second
@@ -129,25 +132,46 @@ func syncWorkerPass(rt *runtime.Runtime, opts SyncWorkerOptions) error {
 	if err != nil {
 		return err
 	}
-	for _, entry := range plan.PushTargets {
-		remote, err := syncWorkerRemote(entry, opts)
-		if err != nil {
-			return err
-		}
-		if err := syncWorkerPush(rt, remote, entry.ID, opts.ProjectRoot); err != nil {
-			return err
+	if opts.Direction != "pull" {
+		for _, entry := range plan.PushTargets {
+			remote, err := syncWorkerRemote(entry, opts)
+			if err != nil {
+				return err
+			}
+			if err := syncWorkerPush(rt, remote, entry.ID, opts.ProjectRoot); err != nil {
+				return err
+			}
 		}
 	}
-	for _, entry := range plan.PullSources {
-		remote, err := syncWorkerRemote(entry, opts)
-		if err != nil {
-			return err
-		}
-		if err := syncWorkerPull(rt, remote, entry.ID, opts.Catalog, opts.ProjectRoot); err != nil {
-			return err
+	if opts.Direction != "push" {
+		for _, entry := range plan.PullSources {
+			remote, err := syncWorkerRemote(entry, opts)
+			if err != nil {
+				return err
+			}
+			if err := syncWorkerPull(rt, remote, entry.ID, opts.Catalog, opts.ProjectRoot); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+// SyncOnce runs one manual federation pass (the public push/pull verbs).
+// It opens the local runtime offline — the daemon must be stopped (the
+// store's single-writer lock enforces it, same as watch).
+func SyncOnce(projectRoot, direction string, errw io.Writer) error {
+	boot, err := ResolveLocalBoot(projectRoot, "", "")
+	if err != nil {
+		return err
+	}
+	catalog := SyncImportCatalog(projectRoot, errw)
+	rt, err := OpenLocalRuntime(boot.StorePath, boot.Loaded, boot.Config.Loops, catalog)
+	if err != nil {
+		return fmt.Errorf("open Local Mnemon (manual sync needs exclusive store access — is the daemon running?): %w", err)
+	}
+	defer rt.Close()
+	return syncWorkerPass(rt, SyncWorkerOptions{ProjectRoot: projectRoot, Direction: direction, Catalog: catalog})
 }
 
 // syncWorkerRemote builds the selected Remote Workspace backend from the remote entry. The
