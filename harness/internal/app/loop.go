@@ -126,26 +126,28 @@ Use the current binding environment when it is available:
 
     . .mnemon/harness/local/env.sh
 
-Then read the scoped view or a rendered context packet:
+Then render the boundary brief, or search your own governed store:
 
-    mnemon-harness control pull \
-      --addr "$MNEMON_CONTROL_ADDR" \
-      --principal "$MNEMON_CONTROL_PRINCIPAL" \
-      --token-file "$MNEMON_CONTROL_TOKEN_FILE"
-
-    mnemon-harness control render \
+    mnemon-harness view \
       --addr "$MNEMON_CONTROL_ADDR" \
       --principal "$MNEMON_CONTROL_PRINCIPAL" \
       --token-file "$MNEMON_CONTROL_TOKEN_FILE" \
       --intent context.packet
+
+    mnemon-harness recall "<keyword>" \
+      --addr "$MNEMON_CONTROL_ADDR" \
+      --principal "$MNEMON_CONTROL_PRINCIPAL" \
+      --token-file "$MNEMON_CONTROL_TOKEN_FILE"
 `
 
 // observeSkillSubmit is the static submit/discovery footer (mechanism that does not vary by kind).
 const observeSkillSubmit = `## How to submit
 
-    mnemon-harness control observe \
-      --type <kind>.write_candidate.observed \
-      --payload '{ "<field>": "<value>", ... }' \
+    mnemon-harness emit \
+      --schema <kind> \
+      --rule <field>=<value> \
+      --narrative <field>=<value> \
+      --ref <field>=<value> \
       --external-id <unique-id>
 
 The exact payload fields for a kind are discoverable — never guess:

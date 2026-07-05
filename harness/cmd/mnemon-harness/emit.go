@@ -54,7 +54,16 @@ func init() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			entry, ok := emitSchemaCatalog[emitSchema]
 			if !ok {
-				return fmt.Errorf("emit: unknown --schema %q (registered: %s)", emitSchema, strings.Join(emitSchemaNames(), ", "))
+				// A bare kind name (no capability prefix) submits that kind
+				// directly — external event packages register kinds the CLI
+				// cannot know statically; the node's policy registry stays
+				// the validator and fails closed on unknown kinds.
+				if kind := strings.TrimSpace(emitSchema); kind != "" && !strings.Contains(kind, "/") {
+					entry.EventType = kind + ".write_candidate.observed"
+					entry.IDPrefix = strings.ReplaceAll(kind, "_", "-")
+				} else {
+					return fmt.Errorf("emit: unknown --schema %q (registered: %s; or pass a bare kind name)", emitSchema, strings.Join(emitSchemaNames(), ", "))
+				}
 			}
 			rule, err := emitZone(emitRulePairs, false)
 			if err != nil {

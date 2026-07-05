@@ -132,12 +132,12 @@ func TestRenderObserveSkill(t *testing.T) {
 		"# mnemon-observe",
 		"When to record",                      // judgment (hand-written)
 		"How to read governed context",        // read path (generic)
-		"mnemon-harness control pull",         // scoped read shape
-		"mnemon-harness control render",       // rendered context shape
+		"mnemon-harness view",                 // boundary brief read shape
+		"mnemon-harness recall",               // own-store search shape
 		"assignment.write_candidate.observed", // embedded mechanism (catalog-rendered)
 		"widget.write_candidate.observed",     // external mechanism (catalog-rendered)
 		"mnemon-harness loop schema --type",   // discovery pointer, not hardcoded fields
-		"mnemon-harness control observe",      // submit shape
+		"mnemon-harness emit",                 // submit shape
 	} {
 		if !strings.Contains(skill, want) {
 			t.Fatalf("observe skill missing %q:\n%s", want, skill)

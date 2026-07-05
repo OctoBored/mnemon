@@ -95,3 +95,31 @@ func TestEmitZonePairShapes(t *testing.T) {
 		t.Fatal("malformed pair must fail closed")
 	}
 }
+
+func TestEmitBareKindFallsThroughToRegistry(t *testing.T) {
+	server, envelopes, _ := stubNode(t)
+	controlAddr = server.URL
+	controlPrincipal = "agent-a"
+	controlToken = ""
+	controlTokenFile = ""
+
+	emitSchema = "widget"
+	emitRulePairs = nil
+	emitRefPairs = nil
+	emitNarrPairs = []string{"statement=外部包事件。"}
+	emitExternalID = ""
+	emit := rootSub(t, "emit")
+	emit.SetOut(io.Discard)
+	if err := emit.RunE(emit, nil); err != nil {
+		t.Fatalf("bare-kind emit must submit (node registry validates): %v", err)
+	}
+	got := (*envelopes)[len(*envelopes)-1]
+	if got.Event.Type != "widget.write_candidate.observed" {
+		t.Fatalf("bare kind must map to its observed type, got %s", got.Event.Type)
+	}
+	// a slashed unknown schema still fails closed at the CLI gate
+	emitSchema = "audit/finding"
+	if err := emit.RunE(emit, nil); err == nil {
+		t.Fatal("unknown capability/kind schema must fail closed")
+	}
+}

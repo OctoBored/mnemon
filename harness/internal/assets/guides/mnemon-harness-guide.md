@@ -17,9 +17,9 @@ Useful commands:
 
 ```bash
 . .mnemon/harness/local/env.sh
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control pull
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control render --intent context.packet
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control render --intent teamwork.events
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" view --intent context.packet
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" view --intent teamwork.events
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" recall "<keyword>"
 "${MNEMON_HARNESS_BIN:-mnemon-harness}" loop packages
 "${MNEMON_HARNESS_BIN:-mnemon-harness}" loop schema --type <kind>
 ```
@@ -32,41 +32,44 @@ Prefer the short teamwork/profile commands when they fit the event you need:
 
 ```bash
 . .mnemon/harness/local/env.sh
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control teamwork signal \
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" teamwork signal \
   --scope <scope> \
   --statement "<collaboration need>" \
   --why-teamwork "<why another agent is useful>" \
   --evidence "<evidence ref>" \
   --external-id <unique-id>
 
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control teamwork assign \
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" teamwork assign \
   --assignee <agent-principal> \
   --scope <scope> \
   --work "<expected work>" \
   --evidence "<evidence ref>" \
   --external-id <unique-id>
 
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control teamwork progress \
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" teamwork report \
   --assignment-ref <assignment-id> \
-  --feedback-kind result \
+  --outcome result \
   --summary "<progress, result, or blocker>" \
   --result "<completed result>" \
+  --attach <artifact-file> \
   --external-id <unique-id>
 
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control profile update \
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" teamwork profile \
   --focus "<current focus>" \
   --advantage "<context advantage>" \
   --summary "<profile summary>" \
   --external-id <unique-id>
 ```
 
-Use the low-level observe API only when you need fields the short commands do not expose:
+Use the generic emit verb only when you need fields the dialect commands do not expose:
 
 ```bash
 . .mnemon/harness/local/env.sh
-"${MNEMON_HARNESS_BIN:-mnemon-harness}" control observe \
-  --type <kind>.write_candidate.observed \
-  --payload '{"rule":{...},"narrative":{...},"refs":{...}}' \
+"${MNEMON_HARNESS_BIN:-mnemon-harness}" emit \
+  --schema <kind> \
+  --rule <field>=<value> \
+  --narrative <field>=<value> \
+  --ref <field>=<value> \
   --external-id <unique-id>
 ```
 
@@ -85,9 +88,10 @@ soon as assignees and expected feedback are clear. Do not wait for local verific
 or a final answer before recording delegation; those can continue after child agents have enough
 durable state to start.
 
-When an assigned slice is complete, emit `progress_digest` with `feedback_kind=result` and a result
-field. Reserve `feedback_kind=progress` for partial work and `feedback_kind=blocker` for work that
-cannot proceed.
+When an assigned slice is complete, report with `--outcome result` and a result field (the wire
+field is `feedback_kind` until the S3 schema rename). Reserve `--outcome progress` for partial work
+and `--outcome blocker` for work that cannot proceed. Attach artifact files with `--attach` so the
+content travels with the handoff instead of dying as a local path.
 
 ## Guardrails
 

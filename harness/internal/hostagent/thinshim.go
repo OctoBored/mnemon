@@ -99,7 +99,7 @@ func hookBodyBlock(timing string) string {
 			`HOOK_BODY="[mnemon] Evaluate whether governed context should be read before responding."`,
 			`if printf '%s' "${INPUT}" | grep -q '\[mnemon:wake\]'; then`,
 			`  if [[ -n "${MNEMON_CONTROL_ADDR:-}" && -n "${MNEMON_CONTROL_PRINCIPAL:-}" ]]; then`,
-			`    RENDER_ARGS=(control render --addr "${MNEMON_CONTROL_ADDR}" --principal "${MNEMON_CONTROL_PRINCIPAL}")`,
+			`    RENDER_ARGS=(view --addr "${MNEMON_CONTROL_ADDR}" --principal "${MNEMON_CONTROL_PRINCIPAL}")`,
 			`    if [[ -n "${MNEMON_CONTROL_TOKEN_FILE:-}" ]]; then`,
 			`      RENDER_ARGS+=(--token-file "${MNEMON_CONTROL_TOKEN_FILE}")`,
 			`    fi`,

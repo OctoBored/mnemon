@@ -75,7 +75,7 @@ set -euo pipefail
 if [[ "$*" == *"--token-file"* ]]; then
   exit 7
 fi
-if [[ "$*" != *"control render"* || "$*" != *"--intent teamwork.events"* ]]; then
+if [[ "$*" != *"view"* || "$*" != *"--intent teamwork.events"* ]]; then
   exit 8
 fi
 printf '[mnemon:work]\nassignment addressed to this principal\n'
