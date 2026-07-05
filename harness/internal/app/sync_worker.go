@@ -176,7 +176,7 @@ func SyncOnce(projectRoot, direction string, errw io.Writer) error {
 
 // syncWorkerRemote builds the selected Remote Workspace backend from the remote entry. The
 // first-party backend is the HTTP MnemonHub wire; product surfaces must not bypass local import.
-func syncWorkerRemote(entry exchange.RemoteEntry, opts SyncWorkerOptions) (exchange.RemoteWorkspace, error) {
+func syncWorkerRemote(entry exchange.RemoteEntry, opts SyncWorkerOptions) (capsuleWorkspace, error) {
 	switch entry.NormalizedBackend() {
 	case exchange.RemoteBackendHTTP:
 		return syncWorkerHTTPRemote(entry, opts)
@@ -188,7 +188,7 @@ func syncWorkerRemote(entry exchange.RemoteEntry, opts SyncWorkerOptions) (excha
 // syncWorkerHTTPRemote builds the bounded HTTP mnemon-hub sync client from the remote entry:
 // credential_ref + ca_file resolve relative to the project root (the same resolution `sync connect`
 // wrote them under), and the endpoint passes the T2 downgrade gate unless explicitly overridden.
-func syncWorkerHTTPRemote(entry exchange.RemoteEntry, opts SyncWorkerOptions) (exchange.RemoteWorkspace, error) {
+func syncWorkerHTTPRemote(entry exchange.RemoteEntry, opts SyncWorkerOptions) (capsuleWorkspace, error) {
 	if strings.TrimSpace(entry.CredentialRef) == "" {
 		return nil, fmt.Errorf("Remote Workspace %q has no credential_ref", entry.ID)
 	}
@@ -231,17 +231,13 @@ type capsuleWorkspace interface {
 // the legacy wire fed (accepted → synced; problem → rejected with the
 // problem type+detail as diagnostic; transport errors abort the pass and
 // leave everything pending for the next tick).
-func syncWorkerPush(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remoteID, projectRoot string) error {
+func syncWorkerPush(rt *runtime.Runtime, hub capsuleWorkspace, remoteID, projectRoot string) error {
 	batch, err := exchange.ReadPushBatch(rt)
 	if err != nil {
 		return err
 	}
 	if len(batch.Events) == 0 {
 		return nil
-	}
-	hub, ok := remote.(capsuleWorkspace)
-	if !ok {
-		return fmt.Errorf("Remote Workspace %q backend does not speak the capsule protocol", remoteID)
 	}
 	priv, pub, err := ReplicaSigningKey(projectRoot)
 	if err != nil {
@@ -288,11 +284,7 @@ func syncWorkerPush(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remote
 // into same-shape synced-event envelopes, and re-enters them through the
 // live runtime's trusted intake (importPulledEvents — the same pipeline the
 // legacy wire fed), then advances the cursor.
-func syncWorkerPull(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remoteID string, catalog policy.Registry, projectRoot string) error {
-	hub, ok := remote.(capsuleWorkspace)
-	if !ok {
-		return fmt.Errorf("Remote Workspace %q backend does not speak the capsule protocol", remoteID)
-	}
+func syncWorkerPull(rt *runtime.Runtime, hub capsuleWorkspace, remoteID string, catalog policy.Registry, projectRoot string) error {
 	pullState, err := exchange.ReadPullState(rt, remoteID)
 	if err != nil {
 		return err

@@ -239,11 +239,10 @@ func capsuleFeedETag(principal contract.ActorID, feed CapsuleFeed) string {
 	return `"` + hex.EncodeToString(h.Sum(nil))[:32] + `"`
 }
 
-// NewProtocolHandler mounts the full hub wire: the v1 capsule protocol plus
-// (until S4d removes it) the legacy /sync three-verb wire.
+// NewProtocolHandler mounts the hub wire: the v1 capsule protocol only —
+// the legacy /sync three-verb wire died at S4d.
 func NewProtocolHandler(hub *Server, auth Authenticator, blobs *blob.Store, audit io.Writer) http.Handler {
 	mux := http.NewServeMux()
 	RegisterCapsuleHandlers(mux, hub, auth, blobs, audit)
-	mux.Handle("/sync/", NewHTTPHandler(hub, auth, audit))
 	return mux
 }

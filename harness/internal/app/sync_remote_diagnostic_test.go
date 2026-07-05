@@ -19,18 +19,6 @@ type staticCapsuleRemote struct {
 	blobs map[string][]byte
 }
 
-func (s staticCapsuleRemote) SyncPush(contract.SyncPushRequest) (contract.SyncPushResponse, error) {
-	return contract.SyncPushResponse{}, nil
-}
-
-func (s staticCapsuleRemote) SyncPull(contract.SyncPullRequest) (contract.SyncPullResponse, error) {
-	return contract.SyncPullResponse{}, nil
-}
-
-func (s staticCapsuleRemote) SyncStatus() (contract.SyncStatusResponse, error) {
-	return contract.SyncStatusResponse{}, nil
-}
-
 func (s staticCapsuleRemote) CapsulePush([]byte) (access.CapsuleAccepted, bool, *access.HubProblem, error) {
 	return access.CapsuleAccepted{}, false, nil, nil
 }

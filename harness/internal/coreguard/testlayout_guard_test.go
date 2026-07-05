@@ -16,6 +16,7 @@ import (
 )
 
 var grandfatheredTestFiles = map[string]bool{
+	"internal/mnemonhub/boundary_test.go":                   true,
 	"cmd/mnemon-harness/config_daemon_test.go":              true,
 	"internal/app/coordination_test.go":                     true,
 	"internal/app/cutover_parity_test.go":                   true,
@@ -71,11 +72,8 @@ var grandfatheredTestFiles = map[string]bool{
 	"internal/mnemond/state/migration_test.go":              true,
 	"internal/mnemond/state/outbox_test.go":                 true,
 	"internal/mnemond/state/store_read_test.go":             true,
-	"internal/mnemonhub/boundary_test.go":                   true,
 	"internal/mnemonhub/exchange/perm_test.go":              true,
 	"internal/mnemonhub/exchange/probe_test.go":             true,
-	"internal/mnemonhub/security_test.go":                   true,
-	"internal/mnemonhub/sync_abi_fixture_test.go":           true,
 	"internal/replay/modes_test.go":                         true,
 	"internal/replay/shadow_test.go":                        true,
 	"internal/runtime/attribution_test.go":                  true,

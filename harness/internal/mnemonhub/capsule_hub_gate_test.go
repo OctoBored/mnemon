@@ -229,3 +229,48 @@ func TestHubHeadReportsProtocolVersion(t *testing.T) {
 		t.Fatalf("HEAD must report the protocol version, got %q", resp.Header.Get(HubProtocolHeader))
 	}
 }
+
+// The wire security floor, migrated from the legacy /sync suite: unknown
+// token → 401 before anything else; an authenticated principal without a
+// replica grant → 403; disallowed methods → 405 with Allow.
+func TestHubCapsuleWireSecurityFloor(t *testing.T) {
+	scopes := []contract.ResourceRef{{Kind: "progress_digest", ID: "payments"}}
+	rig := newHubRig(t, scopes)
+
+	for _, probe := range []struct {
+		method, path string
+	}{
+		{http.MethodPost, "/capsules"},
+		{http.MethodGet, "/capsules?cursor=0"},
+		{http.MethodGet, "/capsules/rejected"},
+		{http.MethodPut, "/blobs/sha256:" + strings.Repeat("00", 32)},
+	} {
+		resp, _ := rig.do(t, probe.method, probe.path, "wrong-token", []byte("{}"), nil)
+		if resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("%s %s with unknown token = %d, want 401", probe.method, probe.path, resp.StatusCode)
+		}
+	}
+
+	// authenticated but ungranted principal: token resolves, grants say no
+	delete(rig.grants, "replica-b@e1")
+	resp, _ := rig.do(t, http.MethodGet, "/capsules?cursor=0", "tok-b", nil, nil)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("ungranted pull = %d, want 403", resp.StatusCode)
+	}
+	env, _, _ := rig.capsuleDoc("progress_digest", "payments", "无授权推送。", nil)
+	raw, _ := json.Marshal(env)
+	resp, _ = rig.do(t, http.MethodPost, "/capsules", "tok-b", raw, nil)
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("ungranted push = %d, want 403", resp.StatusCode)
+	}
+
+	// method enforcement
+	resp, _ = rig.do(t, http.MethodDelete, "/capsules", "tok-a", nil, nil)
+	if resp.StatusCode != http.StatusMethodNotAllowed || resp.Header.Get("Allow") == "" {
+		t.Fatalf("DELETE /capsules = %d Allow=%q, want 405 with Allow", resp.StatusCode, resp.Header.Get("Allow"))
+	}
+	resp, _ = rig.do(t, http.MethodPost, "/capsules/rejected", "tok-a", nil, nil)
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Fatalf("POST /capsules/rejected = %d, want 405", resp.StatusCode)
+	}
+}

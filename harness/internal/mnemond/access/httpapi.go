@@ -286,22 +286,6 @@ func (c *Client) PullPresentationView(_ contract.ActorID, sub contract.Subscript
 	return proj, nil
 }
 
-func (c *Client) SyncPush(reqBody contract.SyncPushRequest) (contract.SyncPushResponse, error) {
-	var out contract.SyncPushResponse
-	if err := c.postJSON("/sync/push", reqBody, &out); err != nil {
-		return contract.SyncPushResponse{}, err
-	}
-	return out, nil
-}
-
-func (c *Client) SyncPull(reqBody contract.SyncPullRequest) (contract.SyncPullResponse, error) {
-	var out contract.SyncPullResponse
-	if err := c.postJSON("/sync/pull", reqBody, &out); err != nil {
-		return contract.SyncPullResponse{}, err
-	}
-	return out, nil
-}
-
 func (c *Client) postJSON(path string, in, out any) error {
 	body, err := json.Marshal(in)
 	if err != nil {

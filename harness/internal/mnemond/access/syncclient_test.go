@@ -1,7 +1,6 @@
 package access
 
 import (
-	"encoding/json"
 	"encoding/pem"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 )
 
 // The T2 downgrade gate (v1.1 #3): plaintext is allowed only inside the loopback boundary; a
@@ -80,7 +78,7 @@ func TestNewSyncClientBoundedTimeoutAndCAFile(t *testing.T) {
 // client's ca_file; without it the handshake fails (no silent fallback to the system pool).
 func TestSyncClientTLSRoundTripWithCAFile(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/sync/status" {
+		if r.URL.Path != "/capsules" {
 			http.NotFound(w, r)
 			return
 		}
@@ -89,7 +87,7 @@ func TestSyncClientTLSRoundTripWithCAFile(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(contract.SyncStatusResponse{Principal: "replica-a@team", RemoteWorkspace: "connected", HubEventsReceived: 7})
+		_, _ = w.Write([]byte(`{"items":[],"next_cursor":7}`))
 	}))
 	defer srv.Close()
 
@@ -102,19 +100,19 @@ func TestSyncClientTLSRoundTripWithCAFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	st, err := trusted.SyncStatus()
+	page, err := trusted.CapsulePull(0, 10, "")
 	if err != nil {
-		t.Fatalf("status over pinned TLS: %v", err)
+		t.Fatalf("capsule pull over pinned TLS: %v", err)
 	}
-	if st.HubEventsReceived != 7 || st.Principal != "replica-a@team" {
-		t.Fatalf("unexpected status payload: %+v", st)
+	if page.NextCursor != 7 {
+		t.Fatalf("unexpected feed payload: %+v", page)
 	}
 
 	untrusted, err := NewSyncClient(srv.URL, SyncClientConfig{Token: "tok"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := untrusted.SyncStatus(); err == nil {
+	if _, err := untrusted.CapsulePull(0, 10, ""); err == nil {
 		t.Fatal("an unpinned client must refuse the self-signed server")
 	}
 }

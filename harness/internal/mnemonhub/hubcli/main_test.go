@@ -3,9 +3,7 @@ package hubcli
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"crypto/tls"
-	"encoding/hex"
 	"encoding/json"
 	"io"
 	"os"
@@ -16,9 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"crypto/ed25519"
+	"encoding/base64"
+	"github.com/mnemon-dev/mnemon/harness/internal/capsule"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
-	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
+	"strconv"
 )
 
 func writeReplicas(t *testing.T, dir, content string, mode os.FileMode) string {
@@ -213,36 +214,24 @@ func TestMnemonHubServesSyncOverTLS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mem := contract.ResourceRef{Kind: "memory", ID: "project"}
-	fields := map[string]any{"content": "pushed through mnemon-hub"}
-	material := contract.SyncedEventMaterial{
-		OriginReplicaID: "local-a", LocalDecisionID: "dec-1", LocalIngestSeq: 1, Actor: "codex@a",
-		ResourceRef: mem, ResourceVersion: 1, FieldsDigest: digestFor(fields), Fields: fields,
-		DecidedAt: "2026-06-12T00:00:00Z", Status: "pending",
+	// capsule wire over TLS: A pushes one signed capsule, B pulls it.
+	env, capsuleID := hubTestCapsule(t, "memory", "project", "pushed through mnemon-hub")
+	raw, _ := json.Marshal(env)
+	accepted, replayed, problem, err := clientA.CapsulePush(raw)
+	if err != nil || problem != nil || replayed || accepted.CapsuleID != capsuleID {
+		t.Fatalf("push over TLS: %+v replayed=%v problem=%+v err=%v", accepted, replayed, problem, err)
 	}
-	pushResp, err := clientA.SyncPush(contract.SyncPushRequest{ReplicaID: "local-a", BatchID: "b1", Events: hubTestSyncEvents(t, material)})
-	if err != nil || len(pushResp.Accepted) != 1 {
-		t.Fatalf("push over TLS: %+v err=%v", pushResp, err)
-	}
-	pullResp, err := clientB.SyncPull(contract.SyncPullRequest{ReplicaID: "local-b"})
-	if err != nil || len(pullResp.Events) != 1 || contract.DecisionIDFromEventID(pullResp.Events[0].Event.ID) != "dec-1" {
-		t.Fatalf("pull over TLS: %+v err=%v", pullResp, err)
-	}
-	status, err := clientA.SyncStatus()
-	if err != nil || status.HubEventsReceived != 1 || status.HubEventsServed != 1 {
-		t.Fatalf("status over TLS: %+v err=%v", status, err)
+	page, err := clientB.CapsulePull(0, 10, "")
+	if err != nil || len(page.Items) != 1 {
+		t.Fatalf("pull over TLS: %+v err=%v", page, err)
 	}
 
-	// B's grant is memory-only: pushing a skill event is rejected by the clamp (scope probe).
-	skillFields := map[string]any{"name": "project"}
-	skillMaterial := contract.SyncedEventMaterial{
-		OriginReplicaID: "local-b", LocalDecisionID: "dec-skill", LocalIngestSeq: 2, Actor: "codex@b",
-		ResourceRef: contract.ResourceRef{Kind: "skill", ID: "project"}, ResourceVersion: 1,
-		FieldsDigest: digestFor(skillFields), Fields: skillFields, DecidedAt: "2026-06-12T00:00:00Z", Status: "pending",
-	}
-	scopeResp, err := clientB.SyncPush(contract.SyncPushRequest{ReplicaID: "local-b", BatchID: "b2", Events: hubTestSyncEvents(t, skillMaterial)})
-	if err != nil || len(scopeResp.Rejected) != 1 {
-		t.Fatalf("out-of-scope push must reject per-event: %+v err=%v", scopeResp, err)
+	// B's grant is memory-only: pushing a skill capsule is clamped (422 problem).
+	skillEnv, _ := hubTestCapsule(t, "skill", "project", "scope probe")
+	skillRaw, _ := json.Marshal(skillEnv)
+	_, _, problem, err = clientB.CapsulePush(skillRaw)
+	if err != nil || problem == nil {
+		t.Fatalf("out-of-scope push must reject with a problem: %+v err=%v", problem, err)
 	}
 
 	// An unknown token is 401 (the wire security floor under TLS).
@@ -250,15 +239,15 @@ func TestMnemonHubServesSyncOverTLS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := badClient.SyncStatus(); err == nil {
+	if _, err := badClient.CapsulePull(0, 10, ""); err == nil {
 		t.Fatal("unknown token must be unauthorized")
 	}
 
 	for _, want := range []string{
-		"principal=replica-a@team verb=sync.push result=ok",
-		"principal=replica-b@team verb=sync.pull result=ok",
-		"principal=replica-a@team verb=sync.status result=ok",
-		"principal=- verb=sync.status result=unauthorized",
+		"principal=replica-a@team verb=capsules.push result=ok",
+		"principal=replica-b@team verb=capsules.pull result=ok",
+		"principal=replica-b@team verb=capsules.push result=rejected",
+		"principal=- verb=capsules result=unauthorized",
 	} {
 		if !strings.Contains(out.String(), want) {
 			t.Fatalf("audit line %q missing in:\n%s", want, out.String())
@@ -298,21 +287,34 @@ func (l *lockedBuffer) String() string {
 	return l.b.String()
 }
 
-func digestFor(fields map[string]any) string {
-	b, _ := json.Marshal(fields)
-	sum := sha256.Sum256(b)
-	return hex.EncodeToString(sum[:])
-}
-
-func hubTestSyncEvents(t *testing.T, materials ...contract.SyncedEventMaterial) []eventmodel.EventEnvelope {
+// hubTestCapsule signs one minimal capsule for the boot round trip.
+func hubTestCapsule(t *testing.T, kind, id, narrative string) (capsule.Envelope, string) {
 	t.Helper()
-	events := make([]eventmodel.EventEnvelope, 0, len(materials))
-	for _, material := range materials {
-		env, err := contract.SyncedEventEnvelopeFromMaterial(material)
-		if err != nil {
-			t.Fatalf("synced event fixture: %v", err)
-		}
-		events = append(events, env)
+	seed := make([]byte, ed25519.SeedSize)
+	for i := range seed {
+		seed[i] = byte(7 + i)
 	}
-	return events
+	priv := ed25519.NewKeyFromSeed(seed)
+	pub := priv.Public().(ed25519.PublicKey)
+	doc := capsule.Document{
+		Schema: capsule.SchemaV1,
+		Header: capsule.Header{
+			Producer:  capsule.Producer{Principal: "local-a", KeyID: capsule.KeyID(pub), PublicKey: base64.StdEncoding.EncodeToString(pub)},
+			Boundary:  "space",
+			CreatedAt: "2026-07-06T00:00:00Z",
+			SchemaIDs: []string{kind},
+		},
+		Records: []capsule.NormalizedRecord{{
+			ID: "local/local-a/1", Verb: "report",
+			Subject: capsule.Subject{Kind: kind, ID: id},
+			Actor:   "codex@a", ExternalID: "dec-" + kind,
+			Narrative: `{"summary":` + strconv.Quote(narrative) + `}`,
+			Decision:  capsule.Decision{ID: "dec-" + kind, IngestSeq: 1, AcceptedAt: "2026-07-06T00:00:01Z"},
+		}},
+	}
+	env, capsuleID, err := capsule.Sign(doc, priv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return env, capsuleID
 }

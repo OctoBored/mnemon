@@ -84,40 +84,11 @@ type ChannelStatus struct {
 
 // Sync{Push,Pull,Status} request/response DTOs for the Remote Workspace sync verbs.
 
-type SyncPushRequest struct {
-	ReplicaID string                     `json:"replica_id"`
-	BatchID   string                     `json:"batch_id"`
-	Events    []eventmodel.EventEnvelope `json:"events"`
-}
-
 type SyncPushResponse struct {
 	Accepted   []EventExchangeResult `json:"accepted"`
 	Rejected   []EventExchangeResult `json:"rejected"`
 	Conflicts  []EventExchangeResult `json:"conflicts"`
 	NextCursor string                `json:"next_cursor,omitempty"`
-}
-
-type SyncPullRequest struct {
-	ReplicaID    string        `json:"replica_id"`
-	RemoteCursor string        `json:"remote_cursor"`
-	Scopes       []ResourceRef `json:"scopes"`
-}
-
-type SyncPullResponse struct {
-	Events      []eventmodel.EventEnvelope `json:"events"`
-	Diagnostics []EventExchangeResult      `json:"diagnostics"`
-	NextCursor  string                     `json:"next_cursor"`
-}
-
-// SyncStatusResponse carries the hub-side event exchange evidence: total synced envelopes accepted
-// into the hub log, total synced envelopes returned across pulls, and the last next_cursor served
-// to each replica principal.
-type SyncStatusResponse struct {
-	Principal         ActorID           `json:"principal"`
-	RemoteWorkspace   string            `json:"remote_workspace"`
-	HubEventsReceived int64             `json:"hub_events_received"`
-	HubEventsServed   int64             `json:"hub_events_served"`
-	HubReplicaCursors map[string]string `json:"hub_replica_cursors,omitempty"`
 }
 
 type EventExchangeResult struct {

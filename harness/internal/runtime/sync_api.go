@@ -12,18 +12,6 @@ import (
 // hosts standalone, authorized here by adapting the channel bindings to replica grants (the
 // dual-form rule, sync-abi-v1 §2). Zero hub logic lives in the runtime anymore — only the adapter.
 
-func (r *Runtime) SyncPush(principal contract.ActorID, req contract.SyncPushRequest) (contract.SyncPushResponse, error) {
-	return r.syncHub().Push(principal, req)
-}
-
-func (r *Runtime) SyncPull(principal contract.ActorID, req contract.SyncPullRequest) (contract.SyncPullResponse, error) {
-	return r.syncHub().Pull(principal, req)
-}
-
-func (r *Runtime) SyncStatus(principal contract.ActorID) (contract.SyncStatusResponse, error) {
-	return r.syncHub().Status(principal)
-}
-
 // syncHub builds the hub view over the runtime's open store. It is stateless (adjudication and
 // counters are durable in the store), so a per-call construction is correct and cheap.
 func (r *Runtime) syncHub() *mnemonhub.Server {
