@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/mnemon-dev/mnemon/harness/internal/activationtrace"
 )
 
 type RuntimeRPCMessage struct {
@@ -210,35 +208,6 @@ func runtimeIssueIdentifierTag(value string) string {
 		return ""
 	}
 	return ExtractIssueIdentity("@" + value)
-}
-
-func runtimeManagedTraceItem(event activationtrace.Event) map[string]any {
-	if len(event.Item) == 0 {
-		return nil
-	}
-	item, _ := cloneRuntimeAny(event.Item).(map[string]any)
-	if item == nil {
-		return nil
-	}
-	item["id"] = runtimeManagedTraceItemID(event)
-	if _, ok := item["source"]; !ok {
-		item["source"] = "managedCodexAppServer"
-	}
-	if strings.TrimSpace(event.SourceRuntime) != "" {
-		item["mnemonSourceRuntime"] = event.SourceRuntime
-	}
-	if strings.TrimSpace(event.Principal) != "" {
-		item["mnemonPrincipal"] = event.Principal
-	}
-	if strings.TrimSpace(event.TurnID) != "" {
-		item["mnemonManagedTurnId"] = event.TurnID
-	}
-	return item
-}
-
-func runtimeManagedTraceItemID(event activationtrace.Event) string {
-	key := firstNonEmptyString(event.ItemID, event.Command, event.Text, event.Kind, event.Method)
-	return runtimeTextDigestID("managed", event.SourceRuntime+"\n"+event.TurnID+"\n"+key)
 }
 
 func cloneRuntimeAny(value any) any {

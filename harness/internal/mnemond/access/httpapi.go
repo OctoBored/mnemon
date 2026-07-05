@@ -285,26 +285,3 @@ func (c *Client) PullPresentationView(_ contract.ActorID, sub contract.Subscript
 	}
 	return proj, nil
 }
-
-func (c *Client) postJSON(path string, in, out any) error {
-	body, err := json.Marshal(in)
-	if err != nil {
-		return err
-	}
-	req, err := http.NewRequest(http.MethodPost, c.baseURL+path, bytes.NewReader(body))
-	if err != nil {
-		return err
-	}
-	c.setAuth(req)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("%s failed: %s: %s", strings.TrimPrefix(path, "/"), resp.Status, string(b))
-	}
-	return json.NewDecoder(resp.Body).Decode(out)
-}

@@ -37,7 +37,6 @@ var grandfatheredTestFiles = map[string]bool{
 	"internal/assembler/assemble_test.go":                   true,
 	"internal/contract/budget_test.go":                      true,
 	"internal/contract/clamp_test.go":                       true,
-	"internal/contract/event_envelope_test.go":              true,
 	"internal/hostagent/claude_settings_noclobber_test.go":  true,
 	"internal/mnemond/access/auth_test.go":                  true,
 	"internal/mnemond/access/bindingwrite_test.go":          true,

@@ -7,16 +7,13 @@
 // Each helper exists in two forms: a LiveStore form over an ALREADY-OPEN handle (the in-process sync
 // worker drives these through the live runtime — opening the store by path from inside the serving
 // process would self-collide on the single-writer flock, v1.1 #2) and the original path-based form
-// that opens/closes per call, kept for the OFFLINE CLI verbs (`sync push|pull --once`, background).
+// that opens/closes per call, used by the in-process sync worker.
 package exchange
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -71,15 +68,6 @@ func ReadPushBatch(s LiveStore) (LocalSyncPushBatch, error) {
 	return LocalSyncPushBatch{ReplicaID: replicaID, Events: events}, nil
 }
 
-func ReadLocalSyncPushBatch(storePath string) (LocalSyncPushBatch, error) {
-	s, err := openLocalSyncStore(storePath)
-	if err != nil {
-		return LocalSyncPushBatch{}, fmt.Errorf("open Local Mnemon store: %w", err)
-	}
-	defer s.Close()
-	return ReadPushBatch(s)
-}
-
 // ApplyPushResponse mirrors the hub's per-event verdicts into the local sync_events ledger (the
 // pusher-side half of the attribution chain) through an open handle.
 func ApplyPushResponse(s LiveStore, remoteID string, resp contract.SyncPushResponse) error {
@@ -102,15 +90,6 @@ func ApplyPushResponse(s LiveStore, remoteID string, resp contract.SyncPushRespo
 	return nil
 }
 
-func ApplyLocalSyncPushResponse(storePath, remoteID string, resp contract.SyncPushResponse) error {
-	s, err := openLocalSyncStore(storePath)
-	if err != nil {
-		return fmt.Errorf("open Local Mnemon store for sync ack: %w", err)
-	}
-	defer s.Close()
-	return ApplyPushResponse(s, remoteID, resp)
-}
-
 // ReadPullState reads the local replica identity + the durable pull cursor for remoteID.
 func ReadPullState(s LiveStore, remoteID string) (LocalSyncPullState, error) {
 	replicaID, err := s.ReplicaID()
@@ -119,15 +98,6 @@ func ReadPullState(s LiveStore, remoteID string) (LocalSyncPullState, error) {
 	}
 	cursor := s.GetCursor(syncPullCursorName(remoteID))
 	return LocalSyncPullState{ReplicaID: replicaID, RemoteCursor: strconv.FormatInt(cursor, 10)}, nil
-}
-
-func ReadLocalSyncPullState(storePath, remoteID string) (LocalSyncPullState, error) {
-	s, err := openLocalSyncStore(storePath)
-	if err != nil {
-		return LocalSyncPullState{}, fmt.Errorf("open Local Mnemon store: %w", err)
-	}
-	defer s.Close()
-	return ReadPullState(s, remoteID)
 }
 
 func ReadLocalSyncCounts(storePath string) (LocalSyncCounts, error) {
@@ -176,26 +146,6 @@ func SetSyncPullCursor(storePath, remoteID, cursor string) error {
 
 func syncPullCursorName(remoteID string) string {
 	return "sync_pull:" + remoteID
-}
-
-// PushBatchID derives a stable batch id from the batch content (order-independent), so a retried
-// identical batch carries the same id — diagnostic provenance for the hub's audit, never an
-// adjudication key (per-event idempotency is the replay defense, sync-abi-v1 §3).
-func PushBatchID(replicaID string, events []eventmodel.EventEnvelope) string {
-	keys := make([]string, 0, len(events))
-	for _, env := range events {
-		origin, _ := env.Meta["origin_mnemond"].(string)
-		digest, _ := env.Meta["digest"].(string)
-		keys = append(keys, strings.Join([]string{
-			origin,
-			env.Event.ID,
-			string(env.Event.Subject),
-			digest,
-		}, "\x00"))
-	}
-	sort.Strings(keys)
-	sum := sha256.Sum256([]byte(replicaID + "\x00" + strings.Join(keys, "\x00")))
-	return "push-" + hex.EncodeToString(sum[:12])
 }
 
 func openLocalSyncStore(path string) (*state.Store, error) {

@@ -86,8 +86,7 @@ soon as assignees and expected feedback are clear. Do not wait for local verific
 or a final answer before recording delegation; those can continue after child agents have enough
 durable state to start.
 
-When an assigned slice is complete, report with `--outcome result` and a result field (the wire
-field is `feedback_kind` until the S3 schema rename). Reserve `--outcome progress` for partial work
+When an assigned slice is complete, report with `--outcome result` and a result field. Reserve `--outcome progress` for partial work
 and `--outcome blocker` for work that cannot proceed. Attach artifact files with `--attach` so the
 content travels with the handoff instead of dying as a local path.
 
