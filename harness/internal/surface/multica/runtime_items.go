@@ -28,37 +28,6 @@ type RuntimeInput struct {
 	IssueIdentitySource string
 }
 
-func RuntimeManagedTraceMessages(threadID, turnID string, event activationtrace.Event, now time.Time) []RuntimeRPCMessage {
-	switch event.Method {
-	case "item/started":
-		item := runtimeManagedTraceItem(event)
-		if len(item) == 0 {
-			return nil
-		}
-		return []RuntimeRPCMessage{{
-			Method: "item/started",
-			Params: RuntimeItemParams(threadID, turnID, item, "startedAtMs", now.UTC().UnixMilli()),
-		}}
-	case "item/completed":
-		item := runtimeManagedTraceItem(event)
-		if len(item) == 0 {
-			return nil
-		}
-		return []RuntimeRPCMessage{{
-			Method: "item/completed",
-			Params: RuntimeItemParams(threadID, turnID, item, "completedAtMs", now.UTC().UnixMilli()),
-		}}
-	case "item/agentMessage/delta":
-		text := strings.TrimSpace(event.Text)
-		if text == "" {
-			return nil
-		}
-		return []RuntimeRPCMessage{runtimeAgentDelta(threadID, turnID, runtimeManagedTraceItemID(event), text)}
-	default:
-		return nil
-	}
-}
-
 func RuntimeCommandExecutionMessages(threadID, turnID, itemID, fallbackCWD string, event RuntimeCommandExecutionMaterial, now time.Time) []RuntimeRPCMessage {
 	command := strings.TrimSpace(event.Command)
 	if command == "" {

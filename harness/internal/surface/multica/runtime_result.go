@@ -5,12 +5,12 @@ import (
 )
 
 type RuntimeResultSummary struct {
-	IssueID             string
-	Identifier          string
-	Title               string
-	Principal           string
-	Status              string
-	Err                 string
+	IssueID    string
+	Identifier string
+	Title      string
+	Principal  string
+	Status     string
+	Err        string
 }
 
 func FormatRuntimeFinalAnswer(result RuntimeResultSummary) string {

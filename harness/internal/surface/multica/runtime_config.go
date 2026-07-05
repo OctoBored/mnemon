@@ -32,10 +32,6 @@ func RuntimeTimeout(env []string) time.Duration {
 	return runtimeDuration(env, []string{"MNEMON_MULTICA_RUNTIME_TIMEOUT", "MULTICA_HTTP_TIMEOUT"}, 30*time.Second)
 }
 
-func RuntimeProviderTurnTimeout(env []string) time.Duration {
-	return runtimeDuration(env, []string{"MNEMON_MULTICA_PROVIDER_TURN_TIMEOUT"}, 10*time.Minute)
-}
-
 func RuntimeMulticaRegistryPaths(env []string, cwd string) []string {
 	paths := []string{}
 	add := func(path string) {

@@ -36,25 +36,6 @@ func CanonicalIssueStatus(status string) string {
 	}
 }
 
-func canonicalProgressStatus(kind string) string {
-	switch normalizeStatusToken(kind) {
-	case "blocker", "blocked":
-		return "blocker"
-	case "result", "done", "complete", "completed":
-		return "result"
-	case "progress", "in_progress", "working", "started":
-		return "progress"
-	case "review", "in_review", "reviewing", "ready_for_review":
-		return "review"
-	case "wait", "waiting", "todo", "to_do":
-		return "waiting"
-	case "cancel", "canceled", "cancelled", "aborted":
-		return "cancelled"
-	default:
-		return ""
-	}
-}
-
 func normalizeStatusToken(status string) string {
 	status = strings.ToLower(strings.TrimSpace(status))
 	status = strings.ReplaceAll(status, "-", "_")

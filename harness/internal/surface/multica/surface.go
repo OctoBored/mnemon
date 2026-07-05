@@ -65,18 +65,6 @@ func ParseSurfaceRefs(meta map[string]any) SurfaceRefs {
 	}
 }
 
-func ParseListedSurfaceRefs(meta map[string]string) SurfaceRefs {
-	if meta == nil {
-		return SurfaceRefs{}
-	}
-	return SurfaceRefs{
-		EventRef:          strings.TrimSpace(meta[MulticaMetadataEventRef]),
-		ResourceRef:       strings.TrimSpace(meta[MulticaMetadataResourceRef]),
-		SurfaceRef:        strings.TrimSpace(meta[MulticaMetadataSurfaceRef]),
-		SourceArtifactRef: strings.TrimSpace(meta[MulticaMetadataSourceArtifactRef]),
-	}
-}
-
 type SurfaceClassificationInput struct {
 	EventRef             string
 	ResourceRef          string

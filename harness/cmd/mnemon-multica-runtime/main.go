@@ -686,19 +686,6 @@ func emitRuntimeCommand(progress runtimeProgressSink, command, output string, ex
 	}
 }
 
-func emitRuntimeCommandCWD(progress runtimeProgressSink, command, cwd, output string, exitCode int, durationMs int64) {
-	if progress != nil {
-		progress(runtimeProgressEvent{Command: command, CWD: cwd, Output: output, ExitCode: exitCode, DurationMs: durationMs})
-	}
-}
-
-func runtimeExitCode(err error) int {
-	if err != nil {
-		return 1
-	}
-	return 0
-}
-
 func runtimeIssueLabel(issue driver.MulticaIssue) string {
 	return multicasurface.RuntimeIssueLabel(issue.ID, issue.Identifier, issue.Title)
 }
