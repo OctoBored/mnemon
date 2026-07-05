@@ -59,7 +59,6 @@ var commandRegistry = []CommandSpec{
 	{Path: "pull", Audience: "operator", Edge: "federate", Endpoint: "GET /capsules (hub)"},
 	{Path: "hub serve", Audience: "operator", Edge: "federate", Endpoint: "POST /capsules (hub)"},
 	{Path: "hub doctor", Audience: "operator", Edge: "federate", Endpoint: "-"},
-	{Path: "hub bootstrap cloudflare", Audience: "operator", Edge: "federate", Endpoint: "-"},
 	{Path: "remote add", Audience: "operator", Edge: "federate", Endpoint: "-"},
 	{Path: "remote list", Audience: "operator", Edge: "federate", Endpoint: "-"},
 	{Path: "remote remove", Audience: "operator", Edge: "federate", Endpoint: "-"},
