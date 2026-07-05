@@ -160,6 +160,12 @@ func (r *Runtime) PendingEvents(afterSeq int64) ([]contract.Event, error) {
 // operator-scoped read the channel's per-actor PullPresentationView cannot serve, so the Tower facade —
 // which holds the *Runtime — reads it here rather than over the access. The caller filters by status
 // (Accepted -> LEDGER, Rejected -> INBOX); the ui package never touches this directly (ui↛store).
+// DecisionsAfter exposes the decision log from a cursor position — the
+// Surface Delivery Feed's read source (r4-multica-adapter-contract §1).
+func (r *Runtime) DecisionsAfter(rowid int64) ([]state.DecisionRow, error) {
+	return r.store.DecisionsAfter(rowid)
+}
+
 func (r *Runtime) DecisionLedger() ([]contract.Decision, error) {
 	rows, err := r.store.DecisionsAfter(0)
 	if err != nil {

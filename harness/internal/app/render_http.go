@@ -24,6 +24,7 @@ const renderAuditRelPath = ".mnemon/harness/local/render-audit.jsonl"
 func NewLocalHTTPHandler(rt *runtime.Runtime, auth access.Authenticator, bindings *access.BindingSet, renderer presentation.Renderer, blobs *blob.Store) http.Handler {
 	mux := http.NewServeMux()
 	registerBlobHandlers(mux, auth, bindings, blobs)
+	registerDeliveryHandlers(mux, rt, auth, bindings)
 	mux.HandleFunc("/render", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)

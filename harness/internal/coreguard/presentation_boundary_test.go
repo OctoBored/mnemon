@@ -9,6 +9,7 @@ import (
 
 var presentationSemanticFiles = map[string]bool{
 	"bootstrap_presenter.go":        true,
+	"delivery_presenter.go":         true,
 	"context_presenter.go":          true,
 	"payload_contract_presenter.go": true,
 	"teamwork_presenter.go":         true,
