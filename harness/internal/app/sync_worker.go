@@ -10,7 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mnemon-dev/mnemon/harness/internal/blob"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
+	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/policy"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemonhub/exchange"
@@ -132,7 +134,7 @@ func syncWorkerPass(rt *runtime.Runtime, opts SyncWorkerOptions) error {
 		if err != nil {
 			return err
 		}
-		if err := syncWorkerPush(rt, remote, entry.ID); err != nil {
+		if err := syncWorkerPush(rt, remote, entry.ID, opts.ProjectRoot); err != nil {
 			return err
 		}
 	}
@@ -141,7 +143,7 @@ func syncWorkerPass(rt *runtime.Runtime, opts SyncWorkerOptions) error {
 		if err != nil {
 			return err
 		}
-		if err := syncWorkerPull(rt, remote, entry.ID, opts.Catalog); err != nil {
+		if err := syncWorkerPull(rt, remote, entry.ID, opts.Catalog, opts.ProjectRoot); err != nil {
 			return err
 		}
 	}
@@ -190,9 +192,22 @@ func syncWorkerHTTPRemote(entry exchange.RemoteEntry, opts SyncWorkerOptions) (e
 	})
 }
 
-// syncWorkerPush pushes the pending batch (if any) and mirrors the hub's per-event verdicts into
-// the local ledger — both through the live handle.
-func syncWorkerPush(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remoteID string) error {
+// capsuleWorkspace is the capsule-native remote face (r4-hub-protocol-v1);
+// the first-party HTTP client satisfies it. Asserted at the push/pull site
+// so the exchange backend seam stays untouched.
+type capsuleWorkspace interface {
+	CapsulePush(raw []byte) (access.CapsuleAccepted, bool, *access.HubProblem, error)
+	CapsulePull(cursor int64, limit int, etag string) (access.CapsuleFeedPage, error)
+	BlobPut(digest string, data []byte) error
+	BlobGet(digest string) ([]byte, error)
+}
+
+// syncWorkerPush assembles one capsule per pending decision, pushes blobs
+// first, then the capsule, and mirrors verdicts into the same local ledger
+// the legacy wire fed (accepted → synced; problem → rejected with the
+// problem type+detail as diagnostic; transport errors abort the pass and
+// leave everything pending for the next tick).
+func syncWorkerPush(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remoteID, projectRoot string) error {
 	batch, err := exchange.ReadPushBatch(rt)
 	if err != nil {
 		return err
@@ -200,37 +215,99 @@ func syncWorkerPush(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remote
 	if len(batch.Events) == 0 {
 		return nil
 	}
-	resp, err := remote.SyncPush(contract.SyncPushRequest{
-		ReplicaID: batch.ReplicaID,
-		BatchID:   exchange.PushBatchID(batch.ReplicaID, batch.Events),
-		Events:    batch.Events,
-	})
+	hub, ok := remote.(capsuleWorkspace)
+	if !ok {
+		return fmt.Errorf("Remote Workspace %q backend does not speak the capsule protocol", remoteID)
+	}
+	priv, pub, err := ReplicaSigningKey(projectRoot)
 	if err != nil {
-		return fmt.Errorf("sync push failed: %w", err)
+		return err
+	}
+	blobs, err := blob.Open(filepath.Join(projectRoot, blob.DefaultDir))
+	if err != nil {
+		return err
+	}
+	var resp contract.SyncPushResponse
+	for _, env := range batch.Events {
+		out, buildErr := BuildOutboundCapsule(env, batch.ReplicaID, priv, pub, blobs)
+		if buildErr != nil {
+			resp.Rejected = append(resp.Rejected, contract.EventExchangeResultFromEnvelope(env, "rejected", buildErr.Error()))
+			continue
+		}
+		blobFailed := false
+		for digest, data := range out.Blobs {
+			if putErr := hub.BlobPut(digest, data); putErr != nil {
+				// transport-grade: leave this decision pending for the next pass
+				blobFailed = true
+				break
+			}
+		}
+		if blobFailed {
+			continue
+		}
+		accepted, _, problem, pushErr := hub.CapsulePush(out.Envelope)
+		if pushErr != nil {
+			return fmt.Errorf("capsule push failed: %w", pushErr)
+		}
+		if problem != nil {
+			resp.Rejected = append(resp.Rejected, contract.EventExchangeResultFromEnvelope(env, "rejected", problem.Type+": "+problem.Detail))
+			continue
+		}
+		resp.Accepted = append(resp.Accepted, contract.EventExchangeResultFromEnvelope(env, "accepted", ""))
+		resp.NextCursor = fmt.Sprintf("%d", accepted.HubSeq)
 	}
 	return exchange.ApplyPushResponse(rt, remoteID, resp)
 }
 
-// syncWorkerPull pulls after the durable cursor, re-enters each event through the live runtime's
-// trusted intake (importPulledEvents — the same loop the offline path uses), then advances the
-// cursor.
-func syncWorkerPull(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remoteID string, catalog policy.Registry) error {
-	state, err := exchange.ReadPullState(rt, remoteID)
+// syncWorkerPull pulls capsules after the durable cursor, verifies each
+// atom (fetching its blob closure into the local store), unpacks records
+// into same-shape synced-event envelopes, and re-enters them through the
+// live runtime's trusted intake (importPulledEvents — the same pipeline the
+// legacy wire fed), then advances the cursor.
+func syncWorkerPull(rt *runtime.Runtime, remote exchange.RemoteWorkspace, remoteID string, catalog policy.Registry, projectRoot string) error {
+	hub, ok := remote.(capsuleWorkspace)
+	if !ok {
+		return fmt.Errorf("Remote Workspace %q backend does not speak the capsule protocol", remoteID)
+	}
+	pullState, err := exchange.ReadPullState(rt, remoteID)
 	if err != nil {
 		return err
 	}
-	resp, err := remote.SyncPull(contract.SyncPullRequest{
-		ReplicaID:    state.ReplicaID,
-		RemoteCursor: state.RemoteCursor,
-	})
+	cursor, _ := strconv.ParseInt(strings.TrimSpace(pullState.RemoteCursor), 10, 64)
+	page, err := hub.CapsulePull(cursor, 0, "")
 	if err != nil {
-		return fmt.Errorf("sync pull failed: %w", err)
+		return fmt.Errorf("capsule pull failed: %w", err)
 	}
-	if err := importPulledEvents(rt, remoteID, resp.Events, catalog); err != nil {
+	if page.NotModified || len(page.Items) == 0 {
+		return nil
+	}
+	blobs, err := blob.Open(filepath.Join(projectRoot, blob.DefaultDir))
+	if err != nil {
 		return err
 	}
-	if err := importRemoteDiagnostics(rt, remoteID, resp.Diagnostics); err != nil {
+	var events []eventmodel.EventEnvelope
+	var diagnostics []contract.EventExchangeResult
+	for _, raw := range page.Items {
+		unpacked, unpackErr := UnpackInboundCapsule(raw, hub.BlobGet, blobs)
+		if unpackErr != nil {
+			// a bad atom never blocks the feed: the cursor keeps moving and
+			// the failure lands as a DURABLE local diagnostic (once).
+			diagnostics = append(diagnostics, contract.EventExchangeResult{
+				OriginMnemond: remoteID,
+				EventID:       capsuleFeedItemID(raw),
+				Subject:       "capsule/inbound",
+				Status:        "invalid",
+				Diagnostic:    unpackErr.Error(),
+			})
+			continue
+		}
+		events = append(events, unpacked...)
+	}
+	if err := importPulledEvents(rt, remoteID, events, catalog); err != nil {
 		return err
 	}
-	return exchange.SetPullCursor(rt, remoteID, resp.NextCursor)
+	if err := importRemoteDiagnostics(rt, remoteID, diagnostics); err != nil {
+		return err
+	}
+	return exchange.SetPullCursor(rt, remoteID, strconv.FormatInt(page.NextCursor, 10))
 }

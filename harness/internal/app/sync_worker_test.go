@@ -12,6 +12,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mnemon-dev/mnemon/harness/internal/blob"
+	"github.com/mnemon-dev/mnemon/harness/internal/capsule"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/policy"
@@ -56,7 +58,11 @@ func startHub(t *testing.T, principals map[string]contract.ActorID, scopes []con
 		tokens[token] = principal
 	}
 	hub := mnemonhub.New(st, grants, func() string { return time.Now().UTC().Format(time.RFC3339) })
-	srv := httptest.NewServer(mnemonhub.NewHTTPHandler(hub, mnemonhub.BearerAuthenticator{Tokens: tokens}, nil))
+	hubBlobs, err := blob.Open(filepath.Join(t.TempDir(), "hub-blobs"))
+	if err != nil {
+		t.Fatalf("open hub blob store: %v", err)
+	}
+	srv := httptest.NewServer(mnemonhub.NewProtocolHandler(hub, mnemonhub.BearerAuthenticator{Tokens: tokens}, hubBlobs, nil))
 	t.Cleanup(srv.Close)
 	return srv.URL, hub, st
 }
@@ -104,6 +110,44 @@ func workerDigest(fields map[string]any) string {
 	b, _ := json.Marshal(fields)
 	sum := sha256.Sum256(b)
 	return hex.EncodeToString(sum[:])
+}
+
+// seedHubCapsule pushes one foreign material into the hub as a signed
+// capsule (the R4 seed path), replacing the legacy hub.Push seeding.
+func seedHubCapsule(t *testing.T, hub *mnemonhub.Server, hubStore *state.Store, material contract.SyncedEventMaterial) {
+	t.Helper()
+	dir := t.TempDir()
+	priv, pub, err := ReplicaSigningKey(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	originBlobs, _ := blob.Open(filepath.Join(dir, "blobs"))
+	env, err := contract.SyncedEventEnvelopeFromMaterial(material)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := BuildOutboundCapsule(env, material.OriginReplicaID, priv, pub, originBlobs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	capEnv, err := capsule.DecodeEnvelope(out.Envelope)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, problem := hub.PushCapsule("replica-other@team", out.Envelope, capEnv, nil); problem != nil {
+		t.Fatalf("seed capsule rejected: %+v", problem)
+	}
+	_ = hubStore
+}
+
+// hubCapsuleCount counts accepted capsules on the hub store.
+func hubCapsuleCount(t *testing.T, hubStore *state.Store) int {
+	t.Helper()
+	records, _, err := hubStore.HubCapsulesAfter(0, "", 1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return len(records)
 }
 
 func foreignProgressMaterial(decisionID, itemID, summary string) contract.SyncedEventMaterial {
@@ -170,7 +214,7 @@ func TestSyncWorkerSurvivesUnreachableRemote(t *testing.T) {
 
 	start := time.Now()
 	err := syncWorkerPass(rt, SyncWorkerOptions{ProjectRoot: root, Timeout: 500 * time.Millisecond})
-	if err == nil || !strings.Contains(err.Error(), "sync push failed") {
+	if err == nil || !strings.Contains(err.Error(), "capsule push failed") {
 		t.Fatalf("unreachable remote must surface a push transport error, got %v", err)
 	}
 	if time.Since(start) > 5*time.Second {
@@ -210,7 +254,7 @@ func TestSyncWorkerPushPullRoundTrip(t *testing.T) {
 	rt := openServingRuntime(t, root)
 	progressRef := contract.ResourceRef{Kind: "progress_digest", ID: "project"}
 	scopes := []contract.ResourceRef{progressRef, {Kind: "assignment", ID: "project"}}
-	endpoint, hub, _ := startHub(t, map[string]contract.ActorID{
+	endpoint, hub, hubStore := startHub(t, map[string]contract.ActorID{
 		"tok-local": "replica-local@team",
 		"tok-other": "replica-other@team",
 	}, scopes)
@@ -218,11 +262,7 @@ func TestSyncWorkerPushPullRoundTrip(t *testing.T) {
 
 	observeProgress(t, rt, "m-rt", "local progress that must reach the hub")
 	foreign := foreignProgressMaterial("dec-foreign-1", "remote-entry-1", "remote progress that must reach this replica")
-	if resp, err := hub.Push("replica-other@team", contract.SyncPushRequest{
-		ReplicaID: "other-replica", BatchID: "seed", Events: testSyncedEvents(t, foreign),
-	}); err != nil || len(resp.Accepted) != 1 {
-		t.Fatalf("seed foreign material: %+v err=%v", resp, err)
-	}
+	seedHubCapsule(t, hub, hubStore, foreign)
 
 	if err := syncWorkerPass(rt, SyncWorkerOptions{ProjectRoot: root}); err != nil {
 		t.Fatalf("worker pass: %v", err)
@@ -232,9 +272,8 @@ func TestSyncWorkerPushPullRoundTrip(t *testing.T) {
 	if pending, _ := rt.PendingSyncedEvents(); len(pending) != 0 {
 		t.Fatalf("push must drain pending synced events, got %+v", pending)
 	}
-	hubStatus, err := hub.Status("replica-local@team")
-	if err != nil || hubStatus.HubEventsReceived != 2 {
-		t.Fatalf("hub must hold seed+pushed events: %+v err=%v", hubStatus, err)
+	if got := hubCapsuleCount(t, hubStore); got != 2 {
+		t.Fatalf("hub must hold seed+pushed capsules, got %d", got)
 	}
 	// Pull half: the foreign entry merged into governed event state.
 	_, fields, err := rt.Resource(progressRef)
@@ -259,8 +298,8 @@ func TestSyncWorkerPushPullRoundTrip(t *testing.T) {
 	if strings.Count(content, "remote progress that must reach this replica") != 1 {
 		t.Fatalf("second pass duplicated the import:\n%s", content)
 	}
-	if st, _ := hub.Status("replica-local@team"); st.HubEventsReceived != 2 {
-		t.Fatalf("second pass must not re-append at the hub: %+v", st)
+	if got := hubCapsuleCount(t, hubStore); got != 2 {
+		t.Fatalf("second pass must not re-append at the hub, got %d", got)
 	}
 }
 
@@ -268,7 +307,7 @@ func TestSyncWorkerPublishOnlyDoesNotPull(t *testing.T) {
 	root := t.TempDir()
 	rt := openServingRuntime(t, root)
 	progressRef := contract.ResourceRef{Kind: "progress_digest", ID: "project"}
-	endpoint, hub, _ := startHub(t, map[string]contract.ActorID{
+	endpoint, hub, hubStore := startHub(t, map[string]contract.ActorID{
 		"tok-local": "replica-local@team",
 		"tok-other": "replica-other@team",
 	}, []contract.ResourceRef{progressRef})
@@ -276,11 +315,7 @@ func TestSyncWorkerPublishOnlyDoesNotPull(t *testing.T) {
 
 	observeProgress(t, rt, "m-publish-only", "publish-only local progress reaches the hub")
 	foreign := foreignProgressMaterial("dec-publish-only-foreign", "remote-publish-only", "publish-only must not import this")
-	if resp, err := hub.Push("replica-other@team", contract.SyncPushRequest{
-		ReplicaID: "other-replica", BatchID: "seed-publish-only", Events: testSyncedEvents(t, foreign),
-	}); err != nil || len(resp.Accepted) != 1 {
-		t.Fatalf("seed foreign material: %+v err=%v", resp, err)
-	}
+	seedHubCapsule(t, hub, hubStore, foreign)
 
 	if err := syncWorkerPass(rt, SyncWorkerOptions{ProjectRoot: root}); err != nil {
 		t.Fatalf("publish-only worker pass: %v", err)
@@ -288,8 +323,8 @@ func TestSyncWorkerPublishOnlyDoesNotPull(t *testing.T) {
 	if pending, _ := rt.PendingSyncedEvents(); len(pending) != 0 {
 		t.Fatalf("publish-only pass must push local synced events, got %+v", pending)
 	}
-	if st, _ := hub.Status("replica-local@team"); st.HubEventsReceived != 2 {
-		t.Fatalf("publish-only pass must append local event to hub without duplicate work: %+v", st)
+	if got := hubCapsuleCount(t, hubStore); got != 2 {
+		t.Fatalf("publish-only pass must append the local capsule to the hub, got %d", got)
 	}
 	_, fields, err := rt.Resource(progressRef)
 	if err != nil {
@@ -305,7 +340,7 @@ func TestSyncWorkerSubscribeOnlyDoesNotPush(t *testing.T) {
 	root := t.TempDir()
 	rt := openServingRuntime(t, root)
 	progressRef := contract.ResourceRef{Kind: "progress_digest", ID: "project"}
-	endpoint, hub, _ := startHub(t, map[string]contract.ActorID{
+	endpoint, hub, hubStore := startHub(t, map[string]contract.ActorID{
 		"tok-local": "replica-local@team",
 		"tok-other": "replica-other@team",
 	}, []contract.ResourceRef{progressRef})
@@ -313,11 +348,7 @@ func TestSyncWorkerSubscribeOnlyDoesNotPush(t *testing.T) {
 
 	observeProgress(t, rt, "m-subscribe-only", "subscribe-only local progress stays pending")
 	foreign := foreignProgressMaterial("dec-subscribe-only-foreign", "remote-subscribe-only", "subscribe-only imports this")
-	if resp, err := hub.Push("replica-other@team", contract.SyncPushRequest{
-		ReplicaID: "other-replica", BatchID: "seed-subscribe-only", Events: testSyncedEvents(t, foreign),
-	}); err != nil || len(resp.Accepted) != 1 {
-		t.Fatalf("seed foreign material: %+v err=%v", resp, err)
-	}
+	seedHubCapsule(t, hub, hubStore, foreign)
 
 	if err := syncWorkerPass(rt, SyncWorkerOptions{ProjectRoot: root}); err != nil {
 		t.Fatalf("subscribe-only worker pass: %v", err)
@@ -325,8 +356,8 @@ func TestSyncWorkerSubscribeOnlyDoesNotPush(t *testing.T) {
 	if pending, _ := rt.PendingSyncedEvents(); len(pending) != 1 {
 		t.Fatalf("subscribe-only pass must not push local synced events, got %+v", pending)
 	}
-	if st, _ := hub.Status("replica-local@team"); st.HubEventsReceived != 1 {
-		t.Fatalf("subscribe-only pass must not append local event to hub: %+v", st)
+	if got := hubCapsuleCount(t, hubStore); got != 1 {
+		t.Fatalf("subscribe-only pass must not append the local capsule to the hub, got %d", got)
 	}
 	_, fields, err := rt.Resource(progressRef)
 	if err != nil {

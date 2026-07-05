@@ -19,6 +19,8 @@ import (
 
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/state"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemonhub"
+
+	"github.com/mnemon-dev/mnemon/harness/internal/blob"
 )
 
 // Run is the whole hub boot behind a testable seam: parse flags, handle the --dev-selfsigned
@@ -75,7 +77,11 @@ func Run(ctx context.Context, args []string, out, errw io.Writer) error {
 	defer st.Close()
 	now := func() string { return time.Now().UTC().Format(time.RFC3339) }
 	// Audit goes to out (stdout in main): one line per request — ts, principal, verb, result.
-	handler := mnemonhub.NewHTTPHandler(mnemonhub.New(st, grants, now), mnemonhub.BearerAuthenticator{Tokens: tokens}, out)
+	hubBlobs, err := blob.Open(filepath.Join(filepath.Dir(*storePath), "blobs"))
+	if err != nil {
+		return fmt.Errorf("open hub blob store: %w", err)
+	}
+	handler := mnemonhub.NewProtocolHandler(mnemonhub.New(st, grants, now), mnemonhub.BearerAuthenticator{Tokens: tokens}, hubBlobs, out)
 	return serveHub(ctx, *addr, handler, *tlsCert, *tlsKey, *storePath, out)
 }
 

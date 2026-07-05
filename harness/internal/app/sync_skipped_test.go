@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mnemon-dev/mnemon/harness/internal/blob"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 	"github.com/mnemon-dev/mnemon/harness/internal/runtime"
@@ -54,21 +55,29 @@ func TestWorkerPullSkippedKindLandsDurableDiagnosticOnce(t *testing.T) {
 		[]contract.ResourceRef{progressRef, {Kind: "goal", ID: "project"}})
 	connectRemote(t, root, endpoint, "tok-local")
 
-	// Seed the hub log directly: one importable progress event + one goal event (newer-hub shape).
-	now := "2026-06-12T00:00:00Z"
-	progressEnv, err := contract.SyncedEventEnvelopeFromMaterial(foreignProgressMaterial("dec-progress", "remote-progress", "progress rides alongside the skipped kind"))
+	// Seed the hub capsule log: one importable progress capsule + one goal
+	// capsule (newer-hub shape; capsule wire replaces the legacy seed).
+	seedDir := t.TempDir()
+	priv, pub, err := ReplicaSigningKey(seedDir)
 	if err != nil {
-		t.Fatalf("materialize progress event: %v", err)
+		t.Fatal(err)
 	}
-	if _, err := hubStore.RecordRemoteSyncedEvent("replica-other@team", progressEnv, now); err != nil {
-		t.Fatalf("seed progress event: %v", err)
-	}
-	goalEnv, err := contract.SyncedEventEnvelopeFromMaterial(foreignGoalMaterial("dec-goal"))
-	if err != nil {
-		t.Fatalf("materialize goal event: %v", err)
-	}
-	if _, err := hubStore.RecordRemoteSyncedEvent("replica-other@team", goalEnv, now); err != nil {
-		t.Fatalf("seed goal event: %v", err)
+	seedBlobs, _ := blob.Open(filepath.Join(seedDir, "blobs"))
+	for name, material := range map[string]contract.SyncedEventMaterial{
+		"progress": foreignProgressMaterial("dec-progress", "remote-progress", "progress rides alongside the skipped kind"),
+		"goal":     foreignGoalMaterial("dec-goal"),
+	} {
+		env, buildErr := contract.SyncedEventEnvelopeFromMaterial(material)
+		if buildErr != nil {
+			t.Fatalf("materialize %s event: %v", name, buildErr)
+		}
+		out, buildErr := BuildOutboundCapsule(env, material.OriginReplicaID, priv, pub, seedBlobs)
+		if buildErr != nil {
+			t.Fatalf("assemble %s capsule: %v", name, buildErr)
+		}
+		if _, _, appendErr := hubStore.AppendHubCapsule(out.CapsuleID, "replica-other@team", string(out.Envelope), "2026-06-12T00:00:00Z"); appendErr != nil {
+			t.Fatalf("seed %s capsule: %v", name, appendErr)
+		}
 	}
 
 	if err := syncWorkerPass(rt, SyncWorkerOptions{ProjectRoot: root}); err != nil {

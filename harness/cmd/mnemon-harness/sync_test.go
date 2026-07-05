@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/mnemon-dev/mnemon/harness/internal/app"
+	"github.com/mnemon-dev/mnemon/harness/internal/blob"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
@@ -310,7 +311,11 @@ func TestSyncPushPullOnceRoundTripsThroughMnemonHub(t *testing.T) {
 		"tok-other": "replica-other@team",
 	}
 	hub := mnemonhub.New(hubStore, grants, func() string { return time.Now().UTC().Format(time.RFC3339) })
-	hubSrv := httptest.NewServer(mnemonhub.NewHTTPHandler(hub, mnemonhub.BearerAuthenticator{Tokens: tokens}, nil))
+	hubBlobs, err := blob.Open(filepath.Join(t.TempDir(), "hub-blobs"))
+	if err != nil {
+		t.Fatalf("open hub blob store: %v", err)
+	}
+	hubSrv := httptest.NewServer(mnemonhub.NewProtocolHandler(hub, mnemonhub.BearerAuthenticator{Tokens: tokens}, hubBlobs, nil))
 	defer hubSrv.Close()
 
 	foreignFields := remoteProgressFields("hub-cli-remote-entry", "manual sync pull imports from mnemonhub")
