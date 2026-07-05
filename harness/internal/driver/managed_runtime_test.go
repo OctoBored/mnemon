@@ -169,8 +169,8 @@ esac
 		t.Fatalf("additional context keys = %+v, want prime and remind", ctx)
 	}
 	for key, want := range map[string]string{
-		"mnemon.hook.enter":  "prime guide loaded",
-		"mnemon.hook.mid": "remind rendered governed context",
+		"mnemon.hook.enter": "prime guide loaded",
+		"mnemon.hook.mid":   "remind rendered governed context",
 	} {
 		entry, ok := ctx[key].(map[string]any)
 		if !ok {

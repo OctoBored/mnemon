@@ -348,7 +348,6 @@ func TestControlShortCommandsEmitR2Payloads(t *testing.T) {
 	buf.Reset()
 	controlExtID = "short-assignment"
 	controlTeamworkAssignID = "asg-short"
-	controlTeamworkAssignSignalRef = "sig-short"
 	controlTeamworkAssignAssignee = "codex-b@project"
 	controlTeamworkAssignScope = "r2/short"
 	controlTeamworkAssignTTL = "20m"
@@ -604,7 +603,6 @@ func stringListLen(value any) int {
 func resetControlShortCommandVars() {
 	controlTeamworkSignalID = ""
 	controlTeamworkSignalScope = ""
-	controlTeamworkSignalUrgency = "normal"
 	controlTeamworkSignalTTL = "30m"
 	controlTeamworkSignalStatement = ""
 	controlTeamworkSignalWhy = ""
@@ -613,7 +611,6 @@ func resetControlShortCommandVars() {
 	controlTeamworkSignalContextRefs = nil
 
 	controlTeamworkAssignID = ""
-	controlTeamworkAssignSignalRef = ""
 	controlTeamworkAssignAssignee = ""
 	controlTeamworkAssignScope = ""
 	controlTeamworkAssignTTL = "20m"

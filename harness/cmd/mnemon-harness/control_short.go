@@ -18,7 +18,6 @@ const controlShortObserveMaxAttempts = 4
 var (
 	controlTeamworkSignalID          string
 	controlTeamworkSignalScope       string
-	controlTeamworkSignalUrgency     string
 	controlTeamworkSignalTTL         string
 	controlTeamworkSignalStatement   string
 	controlTeamworkSignalWhy         string
@@ -27,7 +26,6 @@ var (
 	controlTeamworkSignalContextRefs []string
 
 	controlTeamworkAssignID          string
-	controlTeamworkAssignSignalRef   string
 	controlTeamworkAssignAssignee    string
 	controlTeamworkAssignScope       string
 	controlTeamworkAssignTTL         string
@@ -40,7 +38,7 @@ var (
 
 	controlTeamworkProgressAssignmentRef string
 	controlTeamworkProgressScope         string
-	controlTeamworkProgressOutcome  string
+	controlTeamworkProgressOutcome       string
 	controlTeamworkProgressSummary       string
 	controlTeamworkProgressBlocker       string
 	controlTeamworkProgressResult        string
@@ -79,15 +77,11 @@ var controlTeamworkSignalCmd = &cobra.Command{
 			return err
 		}
 		evidence := cleanStrings(controlTeamworkSignalEvidence)
-		if len(evidence) == 0 {
-			return fmt.Errorf("teamwork signal requires at least one --evidence")
-		}
 		rule := map[string]any{
 			"scope": controlTeamworkSignalScope,
 			"ttl":   controlTeamworkSignalTTL,
 		}
 		putString(rule, "signal_id", controlTeamworkSignalID)
-		putString(rule, "urgency", controlTeamworkSignalUrgency)
 		narrative := map[string]any{
 			"statement":      controlTeamworkSignalStatement,
 			"why_teamwork":   controlTeamworkSignalWhy,
@@ -116,9 +110,6 @@ var controlTeamworkAssignCmd = &cobra.Command{
 			return err
 		}
 		evidence := cleanStrings(controlTeamworkAssignEvidence)
-		if len(evidence) == 0 {
-			return fmt.Errorf("teamwork assign requires at least one --evidence")
-		}
 		rule := map[string]any{
 			"assignee": controlTeamworkAssignAssignee,
 			"scope":    controlTeamworkAssignScope,
@@ -129,7 +120,6 @@ var controlTeamworkAssignCmd = &cobra.Command{
 			assignmentID = defaultShortAssignmentID(controlTeamworkAssignScope, controlTeamworkAssignAssignee, controlTeamworkAssignReportOn, controlTeamworkAssignWork)
 		}
 		putString(rule, "assignment_id", assignmentID)
-		putString(rule, "signal_ref", controlTeamworkAssignSignalRef)
 		putStrings(rule, "report_on", controlTeamworkAssignReportOn)
 		narrative := map[string]any{
 			"expected_work":     controlTeamworkAssignWork,
@@ -439,7 +429,6 @@ func registerSignalFlags(c *cobra.Command) {
 	c.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
 	c.Flags().StringVar(&controlTeamworkSignalID, "signal-id", "", "optional signal id")
 	c.Flags().StringVar(&controlTeamworkSignalScope, "scope", "", "teamwork scope")
-	c.Flags().StringVar(&controlTeamworkSignalUrgency, "urgency", "normal", "signal urgency: low, normal, or high")
 	c.Flags().StringVar(&controlTeamworkSignalTTL, "ttl", "30m", "signal TTL")
 	c.Flags().StringVar(&controlTeamworkSignalStatement, "statement", "", "natural-language teamwork need")
 	c.Flags().StringVar(&controlTeamworkSignalWhy, "why-teamwork", "", "why this needs teamwork")
@@ -451,7 +440,6 @@ func registerSignalFlags(c *cobra.Command) {
 func registerAssignFlags(c *cobra.Command) {
 	c.Flags().StringVar(&controlExtID, "external-id", "", "idempotency external id")
 	c.Flags().StringVar(&controlTeamworkAssignID, "assignment-id", "", "optional assignment id")
-	c.Flags().StringVar(&controlTeamworkAssignSignalRef, "signal-ref", "", "source teamwork_signal id")
 	c.Flags().StringVar(&controlTeamworkAssignAssignee, "assignee", "", "assignee principal")
 	c.Flags().StringVar(&controlTeamworkAssignScope, "scope", "", "assignment scope")
 	c.Flags().StringVar(&controlTeamworkAssignTTL, "ttl", "20m", "assignment TTL")

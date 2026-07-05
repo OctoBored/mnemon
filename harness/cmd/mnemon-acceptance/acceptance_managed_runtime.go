@@ -287,8 +287,8 @@ func runManagedRuntimeRealScenario(ctx context.Context, opts managedRuntimeAccep
 Emit one teamwork_signal.write_candidate.observed event with external id seed-signal-%s and payload:
 {"rule":{"signal_id":%q,"scope":"managed-runtime/seeded-teamwork","ttl":"30m"},"narrative":{"statement":"Validate that managed local mnemond drivers can continue teamwork after one seed prompt.","why_teamwork":"a worker should act from hook-rendered Mnemon context after receiving only the managed wake sentinel"},"refs":{"evidence_refs":["managed-runtime acceptance seed"]}}
 Then emit one assignment.write_candidate.observed event with external id seed-assignment-%s and payload:
-{"rule":{"assignment_id":%q,"signal_ref":%q,"assignee":%q,"scope":"managed-runtime/seeded-teamwork","ttl":"20m"},"narrative":{"expected_work":"Inspect the hook-rendered managed work brief and report whether the sentinel-driven turn can advance the teamwork task.","expected_feedback":"progress_digest with evidence from the managed wake turn"},"refs":{"evidence_refs":["seed signal %s"]}}
-Do not contact the worker directly. After both commands succeed, answer "seed written".`, runID, signalID, runID, assignmentID, signalID, worker.principal, signalID)
+{"rule":{"assignment_id":%q,"assignee":%q,"scope":"managed-runtime/seeded-teamwork","ttl":"20m"},"narrative":{"expected_work":"Inspect the hook-rendered managed work brief and report whether the sentinel-driven turn can advance the teamwork task.","expected_feedback":"progress_digest with evidence from the managed wake turn"},"refs":{"evidence_refs":["seed signal %s"]}}
+Do not contact the worker directly. After both commands succeed, answer "seed written".`, runID, signalID, runID, assignmentID, worker.principal, signalID)
 	report.PromptAudit = append(report.PromptAudit, managedRuntimePromptAuditEntry{Principal: entry.principal, Kind: "entry_seed", Query: seedPrompt})
 	answer, err := runR1Turn(&entry.r1CodexAgent, seedPrompt, opts.TurnTimeout)
 	_ = answer

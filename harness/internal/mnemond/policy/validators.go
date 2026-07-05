@@ -3,6 +3,7 @@ package policy
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	eventmodel "github.com/mnemon-dev/mnemon/harness/internal/event"
 )
@@ -16,6 +17,7 @@ import (
 //
 //	required {missing_style: empty|missing}  empty processed value → "<style> <field>"
 //	format:identifier                        !validIdentifier → "invalid <field>"
+//	format:duration                          non-empty value must be a positive Go duration → "invalid <field>"
 //	enum {values: a|b|c, message}            value not in values → "<message>"
 //	default {value}                          empty processed value ← value
 //	default-from {field}                     empty processed value ← decoded item field (declared earlier)
@@ -29,6 +31,7 @@ import (
 var validatorCatalog = map[string]paramSchema{
 	"required":              {required: []string{"missing_style"}},
 	"format:identifier":     {},
+	"format:duration":       {},
 	"enum":                  {required: []string{"values", "message"}},
 	"default":               {required: []string{"value"}},
 	"default-from":          {required: []string{"field"}},
@@ -80,6 +83,14 @@ func compileDecode(name string, fieldPolicies []FieldSpec) func(payload map[stri
 				case "format:identifier":
 					if !validIdentifier(raw) {
 						return nil, fmt.Errorf("%s candidate denied: invalid %s", name, f.Name)
+					}
+				case "format:duration":
+					// TTL single representation (R4 S3): a positive Go
+					// duration string is the ONLY accepted form.
+					if raw != "" {
+						if d, err := time.ParseDuration(raw); err != nil || d <= 0 {
+							return nil, fmt.Errorf("%s candidate denied: invalid %s", name, f.Name)
+						}
 					}
 				case "enum":
 					if !enumContains(v.Params["values"], raw) {

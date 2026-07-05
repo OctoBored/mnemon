@@ -850,8 +850,8 @@ Read current governed teamwork context with:
 Then emit a teamwork_signal.write_candidate.observed event with external id signal-%s and payload:
 {"rule":{"signal_id":%q,"scope":"r1/real-codex-cluster/local","ttl":"30m"},"narrative":{"statement":"Need another real Codex appserver to complete an R1 acceptance work item.","why_teamwork":"five fresh agent profiles are available; delegation verifies the R1 teamwork event loop"},"refs":{"evidence_refs":["real-codex-cluster acceptance"]}}
 Then choose one teammate other than yourself and emit assignment.write_candidate.observed with external id assignment-%s and payload:
-{"rule":{"assignment_id":%q,"signal_ref":%q,"assignee":"<chosen teammate principal>","scope":"r1/real-codex-cluster/local","ttl":"20m"},"narrative":{"expected_work":"Inspect the R1 teamwork event loop and report whether the real appserver can act on the assignment.","expected_feedback":"progress_digest with assignment_ref and evidence"},"refs":{"evidence_refs":["signal %s"]}}
-After both commands succeed, answer with the assignee principal only.`, runID, signalID, runID, assignID, signalID, signalID)
+{"rule":{"assignment_id":%q,"assignee":"<chosen teammate principal>","scope":"r1/real-codex-cluster/local","ttl":"20m"},"narrative":{"expected_work":"Inspect the R1 teamwork event loop and report whether the real appserver can act on the assignment.","expected_feedback":"progress_digest with assignment_ref and evidence"},"refs":{"evidence_refs":["signal %s"]}}
+After both commands succeed, answer with the assignee principal only.`, runID, signalID, runID, assignID, signalID)
 	answer, err := runR1Turn(&starter, prompt, opts.TurnTimeout)
 	appendAgentAnswer(report, starter.principal, answer)
 	if err != nil {

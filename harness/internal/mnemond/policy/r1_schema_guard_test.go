@@ -28,44 +28,46 @@ func TestR1TeamworkEventPackageSchema(t *testing.T) {
 		valid        map[string]any
 		invalid      map[string]any
 	}{
+		// R4 S3: narrative requireds are teaching, not law — the deny cases
+		// below are RULE-zone violations (the surviving closed field set).
 		{
 			name:         "agent_profile",
 			risk:         "low",
-			requiredMiss: "empty context_advantages",
+			requiredMiss: "missing ttl",
 			valid: payload(map[string]any{"actor": "codex@project", "availability": "available", "ttl": "30m"},
 				map[string]any{"focus": "render presentation implementation",
 					"context_advantages": []any{"read r1 docs", "inspected hostagent setup"},
 					"summary":            "Working on R1 render/presentation."}, nil),
-			invalid: payload(map[string]any{"actor": "codex@project", "availability": "available", "ttl": "30m"},
-				map[string]any{"focus": "render presentation implementation", "summary": "Missing advantages."}, nil),
+			invalid: payload(map[string]any{"actor": "codex@project", "availability": "available"},
+				map[string]any{"focus": "render presentation implementation", "summary": "Missing ttl."}, nil),
 		},
 		{
 			name:         "teamwork_signal",
 			risk:         "mid",
-			requiredMiss: "empty why_teamwork",
+			requiredMiss: "invalid ttl",
 			valid: payload(map[string]any{"scope": "harness/r1", "ttl": "2h"},
 				map[string]any{"statement": "Need teammate review",
 					"why_teamwork": "another agent has fresher sync context",
 				}, map[string]any{"evidence_refs": []any{"profile:sync-context"}}),
-			invalid: payload(map[string]any{"scope": "harness/r1", "ttl": "2h"},
+			invalid: payload(map[string]any{"scope": "harness/r1", "ttl": "2 hours"},
 				map[string]any{"statement": "Need teammate review"}, map[string]any{"evidence_refs": []any{"x"}}),
 		},
 		{
 			name:         "assignment",
 			risk:         "mid",
-			requiredMiss: "empty expected_feedback",
+			requiredMiss: "missing assignee",
 			valid: payload(map[string]any{"assignee": "codex-b@project", "scope": "harness/r1/render", "ttl": "45m"},
 				map[string]any{"expected_work": "review render audit fields", "expected_feedback": "short blockers list"},
 				map[string]any{"evidence_refs": []any{"profile:codex-b"}}),
-			invalid: payload(map[string]any{"assignee": "codex-b@project", "scope": "harness/r1/render", "ttl": "45m"},
+			invalid: payload(map[string]any{"scope": "harness/r1/render", "ttl": "45m"},
 				map[string]any{"expected_work": "review render audit fields"}, map[string]any{"evidence_refs": []any{"x"}}),
 		},
 		{
 			name:         "progress_digest",
 			risk:         "low",
-			requiredMiss: "empty summary",
+			requiredMiss: "invalid outcome",
 			valid:        payload(map[string]any{"assignment_ref": "asg-1", "outcome": "progress"}, map[string]any{"summary": "Rendered work presentation and tests pass."}, nil),
-			invalid:      payload(map[string]any{"assignment_ref": "asg-1", "outcome": "progress"}, nil, nil),
+			invalid:      payload(map[string]any{"assignment_ref": "asg-1", "outcome": "someday"}, map[string]any{"summary": "Bad outcome value."}, nil),
 		},
 	}
 
