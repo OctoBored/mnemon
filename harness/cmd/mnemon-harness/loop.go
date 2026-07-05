@@ -19,9 +19,10 @@ var (
 )
 
 var loopCmd = &cobra.Command{
-	Use:    "loop",
-	Short:  "Inspect and validate harness event packages",
-	Hidden: true,
+	Use:        "loop",
+	Short:      "Inspect and validate harness event packages",
+	Hidden:     true,
+	Deprecated: "capability packages are inspected via `node reload` + doctor from R4 on; this group is removed at S6",
 }
 
 var loopValidateCmd = &cobra.Command{

@@ -10,19 +10,31 @@ import (
 
 var towerDump bool
 
-// towerCmd is the Agent Control Tower (P6, D5: TUI-only, command name `tower`) — the human-visible
-// boundary over the agent field. It renders the four §3.3 pages (GOAL/FIELD/INBOX/LEDGER) read-only.
+// watchCmd is the R4 name for the Agent Control Tower (r4-cli-surface §2:
+// tower→watch) — the human-visible boundary over the agent field. It renders
+// the four pages (GOAL/FIELD/INBOX/LEDGER) read-only. towerCmd stays as the
+// hidden deprecated alias through the compat window (removed at S6).
+var watchCmd = &cobra.Command{
+	Use:   "watch",
+	Short: "Watch the agent field: the four-page read-only boundary (GOAL/FIELD/INBOX/LEDGER)",
+	RunE:  runTower,
+}
+
 var towerCmd = &cobra.Command{
-	Use:    "tower",
-	Short:  "Agent Control Tower — the four-page human boundary over the agent field (GOAL/FIELD/INBOX/LEDGER)",
-	Hidden: true,
-	RunE:   runTower,
+	Use:        "tower",
+	Short:      "Agent Control Tower — the four-page human boundary over the agent field (GOAL/FIELD/INBOX/LEDGER)",
+	Hidden:     true,
+	Deprecated: "use `mnemon-harness watch` (R4 name; this alias is removed at S6)",
+	RunE:       runTower,
 }
 
 func init() {
-	towerCmd.Flags().BoolVar(&towerDump, "dump", false, "render a one-shot read-only snapshot of the four pages and exit (headless/scriptable)")
+	for _, c := range []*cobra.Command{watchCmd, towerCmd} {
+		c.Flags().BoolVar(&towerDump, "dump", false, "render a one-shot read-only snapshot of the four pages and exit (headless/scriptable)")
+	}
+	watchCmd.GroupID = groupSpine
 	towerCmd.GroupID = groupAdvanced
-	rootCmd.AddCommand(towerCmd)
+	rootCmd.AddCommand(watchCmd, towerCmd)
 }
 
 // runTower assembles the read-only Tower view and renders it. READ-ONLY: it never writes or Ticks. It

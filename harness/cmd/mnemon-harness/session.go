@@ -23,8 +23,9 @@ var (
 )
 
 var sessionCmd = &cobra.Command{
-	Use:   "session",
-	Short: "Start and attach harness sessions",
+	Use:        "session",
+	Short:      "Start and attach harness sessions",
+	Deprecated: "lifecycle boundaries ride host hooks + `view` from R4 on; this group is removed at S6",
 }
 
 var sessionStartCmd = &cobra.Command{

@@ -62,9 +62,10 @@ func controlClient() (*access.Client, error) {
 }
 
 var controlCmd = &cobra.Command{
-	Use:    "control",
-	Short:  "Channel client verbs (observe / pull / status) over a running Local Mnemon service",
-	Hidden: true,
+	Use:        "control",
+	Short:      "Channel client verbs (observe / pull / status) over a running Local Mnemon service",
+	Hidden:     true,
+	Deprecated: "use the R4 protocol verbs (emit / recall / view / api); this group is removed at S6",
 }
 
 var controlObserveCmd = &cobra.Command{
