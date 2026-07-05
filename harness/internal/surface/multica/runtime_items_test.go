@@ -1,36 +1,9 @@
 package multica
 
 import (
-	"strings"
 	"testing"
 	"time"
 )
-
-func TestRuntimeCommandExecutionMessagesUseStableRuntimeShape(t *testing.T) {
-	messages := RuntimeCommandExecutionMessages("thread-1", "turn-1", "", "/workspace", RuntimeCommandExecutionMaterial{
-		Command:    "multica issue get iss-1",
-		Output:     "Loaded TEA-1",
-		ExitCode:   0,
-		DurationMs: -1,
-	}, time.Date(2026, 6, 29, 7, 31, 0, 0, time.UTC))
-	if len(messages) != 2 {
-		t.Fatalf("messages = %+v, want start+complete", messages)
-	}
-	started, _ := messages[0].Params["item"].(map[string]any)
-	completed, _ := messages[1].Params["item"].(map[string]any)
-	if messages[0].Method != "item/started" || started["status"] != "inProgress" || started["cwd"] != "/workspace" {
-		t.Fatalf("unexpected started command item: %+v", messages[0])
-	}
-	if messages[1].Method != "item/completed" || completed["status"] != "completed" || completed["aggregatedOutput"] != "Loaded TEA-1" {
-		t.Fatalf("unexpected completed command item: %+v", messages[1])
-	}
-	if completed["durationMs"] != int64(0) {
-		t.Fatalf("durationMs = %+v, want 0", completed["durationMs"])
-	}
-	if id, _ := started["id"].(string); !strings.HasPrefix(id, "call_") || completed["id"] != id {
-		t.Fatalf("command item id mismatch start=%+v completed=%+v", started["id"], completed["id"])
-	}
-}
 
 func TestRuntimeAgentMessageMessagesUsePhaseAndDelta(t *testing.T) {
 	messages := RuntimeAgentMessageMessages("thread-1", "turn-1", "msg-1", "done", "final_answer", time.Date(2026, 6, 29, 7, 32, 0, 0, time.UTC))

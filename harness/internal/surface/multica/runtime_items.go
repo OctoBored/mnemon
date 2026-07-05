@@ -14,50 +14,10 @@ type RuntimeRPCMessage struct {
 	Params map[string]any
 }
 
-type RuntimeCommandExecutionMaterial struct {
-	Command    string
-	CWD        string
-	Output     string
-	ExitCode   int
-	DurationMs int64
-}
-
 type RuntimeInput struct {
 	Text                string
 	IssueIdentity       string
 	IssueIdentitySource string
-}
-
-func RuntimeCommandExecutionMessages(threadID, turnID, itemID, fallbackCWD string, event RuntimeCommandExecutionMaterial, now time.Time) []RuntimeRPCMessage {
-	command := strings.TrimSpace(event.Command)
-	if command == "" {
-		return nil
-	}
-	if strings.TrimSpace(itemID) == "" {
-		itemID = runtimeTextDigestID("call", command+"\n"+event.Output)
-	}
-	cwd := strings.TrimSpace(event.CWD)
-	if cwd == "" {
-		cwd = fallbackCWD
-	}
-	output := strings.TrimSpace(event.Output)
-	durationMs := event.DurationMs
-	if durationMs < 0 {
-		durationMs = 0
-	}
-	nowMs := now.UTC().UnixMilli()
-	started := runtimeCommandExecution(itemID, command, cwd, "inProgress", "", nil, nil)
-	completed := runtimeCommandExecution(itemID, command, cwd, "completed", output, event.ExitCode, durationMs)
-	return []RuntimeRPCMessage{
-		{
-			Method: "item/started",
-			Params: RuntimeItemParams(threadID, turnID, started, "startedAtMs", nowMs),
-		},
-		{
-			Method: "item/completed",
-			Params: RuntimeItemParams(threadID, turnID, completed, "completedAtMs", nowMs),
-		},
-	}
 }
 
 func RuntimeAgentMessageMessages(threadID, turnID, itemID, text, phase string, now time.Time) []RuntimeRPCMessage {
@@ -298,28 +258,6 @@ func cloneRuntimeAny(value any) any {
 	default:
 		return typed
 	}
-}
-
-func runtimeCommandExecution(id, command, cwd, status, output string, exitCode any, durationMs any) map[string]any {
-	item := map[string]any{
-		"type":             "commandExecution",
-		"id":               id,
-		"command":          command,
-		"cwd":              cwd,
-		"processId":        "mnemon-runtime",
-		"source":           "mnemonRuntime",
-		"status":           status,
-		"commandActions":   []any{map[string]any{"type": "unknown", "command": command}},
-		"aggregatedOutput": nil,
-		"exitCode":         nil,
-		"durationMs":       nil,
-	}
-	if status == "completed" {
-		item["aggregatedOutput"] = output
-		item["exitCode"] = exitCode
-		item["durationMs"] = durationMs
-	}
-	return item
 }
 
 func runtimeAgentDelta(threadID, turnID, itemID, delta string) RuntimeRPCMessage {
