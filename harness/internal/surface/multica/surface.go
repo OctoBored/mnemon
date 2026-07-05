@@ -79,22 +79,6 @@ type SurfaceClassification struct {
 	Reason string
 }
 
-func ClassifySurfaceAction(in SurfaceClassificationInput) SurfaceClassification {
-	if in.ActivationRequested || in.LocalActionRequired {
-		if strings.TrimSpace(in.EventRef) == "" {
-			return SurfaceClassification{Action: SurfaceActionNone, Reason: "activation requires event_ref"}
-		}
-		return SurfaceClassification{Action: SurfaceActionActivationNeeded, Role: SurfaceRoleActivate, Reason: "accepted event requires explicit activation"}
-	}
-	if in.DisplayRequested ||
-		strings.TrimSpace(in.VisibleSummary) != "" ||
-		strings.TrimSpace(in.VisibleStatus) != "" ||
-		in.HasMulticaControlRef {
-		return SurfaceClassification{Action: SurfaceActionDisplayOnly, Role: SurfaceRoleDisplay, Reason: "accepted event has display surface value"}
-	}
-	return SurfaceClassification{Action: SurfaceActionNone, Reason: "no Multica surface action required"}
-}
-
 type DisplayWritebackRequest struct {
 	IssueID            string
 	Refs               SurfaceRefs
@@ -252,34 +236,6 @@ type InteractionDecision struct {
 	RequestActivation bool
 	Drift             bool
 	Reason            string
-}
-
-func ClassifyHumanInteraction(in HumanInteraction) InteractionDecision {
-	switch in.Kind {
-	case HumanInteractionComment:
-		return InteractionDecision{
-			SurfaceRole:     SurfaceRoleInput,
-			ObservationType: "multica.comment.observed",
-			ExternalID:      "multica-comment-" + strings.TrimSpace(in.CommentID),
-			Reason:          "human comment imports as observation",
-		}
-	case HumanInteractionStatusMove:
-		return InteractionDecision{
-			SurfaceRole:     SurfaceRoleInput,
-			ObservationType: "multica.status_request.observed",
-			ExternalID:      "multica-status-" + strings.TrimSpace(in.IssueID) + "-" + CanonicalIssueStatus(in.Status),
-			Reason:          "human status move is a request, not canonical state",
-		}
-	case HumanInteractionManagedEdit:
-		return InteractionDecision{SurfaceRole: SurfaceRoleDrift, Drift: true, Reason: "managed block was edited outside Mnemon writeback"}
-	case HumanInteractionTag:
-		if strings.TrimSpace(in.EventRef) != "" {
-			return InteractionDecision{SurfaceRole: SurfaceRoleActivate, RequestActivation: true, Reason: "tag carries event_ref"}
-		}
-		return InteractionDecision{SurfaceRole: SurfaceRoleInput, ObservationType: "multica.tag_input.observed", Reason: "tag without event_ref is external input"}
-	default:
-		return InteractionDecision{SurfaceRole: SurfaceRoleInput, ObservationType: "multica.input.observed", Reason: "unknown human interaction imports as observation"}
-	}
 }
 
 func writeDisplaySection(b *strings.Builder, heading, value string) {

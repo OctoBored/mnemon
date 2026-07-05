@@ -20,25 +20,6 @@ func TestRuntimeAgentMessageMessagesUsePhaseAndDelta(t *testing.T) {
 	}
 }
 
-func TestRuntimeTextInputExtractsOnlyTextItems(t *testing.T) {
-	got := RuntimeTextInput(map[string]any{
-		"input": []any{
-			map[string]any{"type": "text", "text": "Open [TEA-1](mention://issue/iss-1)."},
-			map[string]any{"type": "image", "url": "ignored"},
-			map[string]any{"type": "text", "text": "  "},
-			map[string]any{"type": "text", "text": "Then summarize."},
-			"ignored",
-		},
-	})
-	want := "Open [TEA-1](mention://issue/iss-1).\nThen summarize."
-	if got != want {
-		t.Fatalf("RuntimeTextInput() = %q, want %q", got, want)
-	}
-	if got := RuntimeTextInput(map[string]any{"input": "not-list"}); got != "" {
-		t.Fatalf("non-list input should be ignored, got %q", got)
-	}
-}
-
 func TestRuntimeInputMaterialExtractsStructuredIssueIdentity(t *testing.T) {
 	got := RuntimeInputMaterial(map[string]any{
 		"input": []any{

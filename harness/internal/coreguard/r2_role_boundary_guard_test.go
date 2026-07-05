@@ -41,12 +41,6 @@ var activationTraceImportBoundary = roleImportBoundary{
 	rationale: "activation trace is non-canonical run display material and must not become EventEnvelope material",
 }
 
-var driverProjectionImportBoundary = roleImportBoundary{
-	pkg:       "driver",
-	forbids:   []string{},
-	rationale: "driver is a CLI adapter facade during R2 cleanup (projection package removed in R4 S0)",
-}
-
 func TestR2RoleBoundaryGuardLogicIsNotVacuous(t *testing.T) {
 	if !roleImportForbidden("github.com/mnemon-dev/mnemon/harness/internal/mnemond/access", displaySurfaceImportBoundaries[0].forbids) {
 		t.Fatal("display boundary guard must flag mnemond access imports")
@@ -67,10 +61,6 @@ func TestDisplaySurfacesDoNotIngestGovernedEvents(t *testing.T) {
 
 func TestActivationTraceNeverWritesEventMaterial(t *testing.T) {
 	assertPackageAvoidsForbiddenImports(t, activationTraceImportBoundary)
-}
-
-func TestDriverDoesNotOwnProjectionFormatting(t *testing.T) {
-	assertPackageAvoidsForbiddenImports(t, driverProjectionImportBoundary)
 }
 
 func assertPackageAvoidsForbiddenImports(t *testing.T, boundary roleImportBoundary) {

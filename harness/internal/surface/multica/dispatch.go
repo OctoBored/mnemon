@@ -100,11 +100,15 @@ func DispatchDelivery(ctx context.Context, deps DispatchDeps, delivery presentat
 		TargetKind:  "comment",
 		TargetID:    issueID,
 	}
-	_, reserved, err := deps.Ledger.Reserve(ledgerRecord)
+	existing, fresh, err := deps.Ledger.Reserve(ledgerRecord)
 	if err != nil {
 		return result, err
 	}
-	if !reserved {
+	// Skip ONLY when a COMPLETED writeback already exists. A reservation
+	// left behind by a prior transient failure (status != "written") is
+	// retried, not silently swallowed as a duplicate (correctness: no
+	// permanent delivery loss on a recoverable error).
+	if !fresh && existing.Status == "written" {
 		result.SkippedDuplicate = true
 		return result, nil
 	}
@@ -116,15 +120,18 @@ func DispatchDelivery(ctx context.Context, deps DispatchDeps, delivery presentat
 		metadata[key] = value
 	}
 	metadata[MulticaMetadataSurfaceRef] = "multica://issue/" + issueID
-	var artifactNames []string
+	var artifactNames, artifactDigests []string
 	for _, artifact := range delivery.Artifacts {
 		localPath, name, matErr := MaterializeArtifact(deps.FetchBlob, deps.ArtifactDir, artifact.Digest, artifact.Name)
 		if matErr != nil {
 			return result, matErr
 		}
 		artifactNames = append(artifactNames, name)
+		artifactDigests = append(artifactDigests, artifact.Digest)
 		result.Artifacts = append(result.Artifacts, localPath)
-		metadata[MulticaMetadataSourceArtifactRef] = artifact.Digest
+	}
+	if len(artifactDigests) > 0 {
+		metadata[MulticaMetadataSourceArtifactRef] = strings.Join(artifactDigests, " ")
 	}
 
 	// visible text: title + narrative through redaction; NEVER an error

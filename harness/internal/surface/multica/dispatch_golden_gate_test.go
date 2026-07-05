@@ -197,3 +197,31 @@ func TestGolden6DispatcherHasNoSubmissionSurface(t *testing.T) {
 		t.Fatal("zero-value deps must be inert")
 	}
 }
+
+func TestReservedButFailedDeliveryRetriesNotSkipped(t *testing.T) {
+	dir := t.TempDir()
+	ledger := NewFileSurfaceWriteLedger(dir + "/ledger.jsonl")
+	// simulate a prior transient failure: a "reserved" row exists but the
+	// write never completed (no Record).
+	rec := SurfaceWriteLedgerRecord{EventRef: "dec_x", SurfaceRole: SurfaceRole(presentationDisplayRole()), TargetKind: "comment", TargetID: "issue-1"}
+	if _, _, err := ledger.Reserve(rec); err != nil {
+		t.Fatal(err)
+	}
+	client := &fakeMulticaClient{}
+	deps := DispatchDeps{Client: client, Ledger: ledger, ArtifactDir: dir + "/artifacts"}
+	d := goldenDelivery()
+	d.Artifacts = nil
+	d.EventRef = "dec_x"
+	result, err := DispatchDelivery(context.Background(), deps, d, "issue-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.SkippedDuplicate {
+		t.Fatal("a reserved-but-not-written delivery must retry, not skip as duplicate")
+	}
+	if len(client.comments) != 1 {
+		t.Fatalf("retry must write the comment, got %d", len(client.comments))
+	}
+}
+
+func presentationDisplayRole() string { return "display" }

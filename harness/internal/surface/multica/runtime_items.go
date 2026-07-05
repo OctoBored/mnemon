@@ -69,10 +69,6 @@ func RuntimeUserMessage(text string) map[string]any {
 	}
 }
 
-func RuntimeTextInput(params map[string]any) string {
-	return RuntimeInputMaterial(params).Text
-}
-
 func RuntimeInputMaterial(params map[string]any) RuntimeInput {
 	input, ok := params["input"].([]any)
 	if !ok {

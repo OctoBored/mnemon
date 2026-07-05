@@ -1253,17 +1253,29 @@ type HubRejectedRecord struct {
 // (content addressing IS the idempotency key — no separate header).
 func (s *Store) AppendHubCapsule(capsuleID, producer, envelope, receivedAt string) (int64, bool, error) {
 	var seq int64
-	err := s.db.QueryRow(`SELECT hub_seq FROM hub_capsules WHERE capsule_id=?`, capsuleID).Scan(&seq)
-	if err == nil {
+	if err := s.db.QueryRow(`SELECT hub_seq FROM hub_capsules WHERE capsule_id=?`, capsuleID).Scan(&seq); err == nil {
 		return seq, true, nil
 	}
 	res, err := s.db.Exec(`INSERT INTO hub_capsules(capsule_id, producer, envelope, received_at) VALUES(?,?,?,?)`,
 		capsuleID, producer, envelope, receivedAt)
 	if err != nil {
+		// A concurrent identical push loses the INSERT race on the
+		// capsule_id UNIQUE constraint — content addressing means the
+		// stored row is byte-identical, so this is a replay, not a
+		// rejection. Re-read and report it as such.
+		if seq2, selErr := s.hubCapsuleSeq(capsuleID); selErr == nil {
+			return seq2, true, nil
+		}
 		return 0, false, err
 	}
 	seq, err = res.LastInsertId()
 	return seq, false, err
+}
+
+func (s *Store) hubCapsuleSeq(capsuleID string) (int64, error) {
+	var seq int64
+	err := s.db.QueryRow(`SELECT hub_seq FROM hub_capsules WHERE capsule_id=?`, capsuleID).Scan(&seq)
+	return seq, err
 }
 
 // HubCapsulesAfter lists accepted capsules after cursor, excluding the
