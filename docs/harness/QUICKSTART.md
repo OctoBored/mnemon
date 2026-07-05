@@ -22,11 +22,11 @@ mnemon-harness setup --host codex \
 mnemon-harness local run &
 
 # 3. observe a candidate — Local Mnemon admits it through its rules (ticked=true)
-mnemon-harness control observe \
+mnemon-harness emit \
   --addr http://127.0.0.1:8801 --principal codex@project \
   --token-file .mnemon/harness/channel/credentials/codex-project.token \
-  --type progress_digest.write_candidate.observed --external-id q1 \
-  --payload '{"summary":"my first governed event"}'
+  --schema progress_digest --external-id q1 \
+  --narrative summary="my first governed event"
 # -> observed seq=1 dup=false ticked=true
 
 # 4. stop the daemon, then read the Control Tower (it needs exclusive store access)
@@ -83,11 +83,11 @@ JSON
 
 # 3. run + observe your new kind — it governs through the SAME path as embedded descriptors
 mnemon-harness local run &
-mnemon-harness control observe \
+mnemon-harness emit \
   --addr http://127.0.0.1:8803 --principal codex@project \
   --token-file .mnemon/harness/channel/credentials/codex-project.token \
-  --type note.write_candidate.observed --external-id n1 \
-  --payload '{"text":"governed by a kind I declared"}'
+  --schema note --external-id n1 \
+  --narrative text="governed by a kind I declared"
 # -> observed seq=1 dup=false ticked=true
 ```
 
@@ -102,7 +102,7 @@ tiers, sync strategies) is in [`loop-package-v2.md`](loop-package-v2.md) and
 
 | You ran | The protocol object |
 |---|---|
-| `control observe` | an Event admitted at the Channel boundary |
+| `emit` | an Event admitted at the Channel boundary |
 | `ticked=true` | the kernel decided it (a Decision) |
 | `tower` LEDGER | the accepted Decision + its attribution |
 | `capability.json` | a governed, versioned event-model declaration |

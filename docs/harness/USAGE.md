@@ -41,20 +41,20 @@ Inspect local state:
 Connect an HTTP `mnemon-hub` Remote Workspace:
 
 ```sh
-./mnemon-harness sync connect my-workspace --remote-url https://mnemon-hub.example/sync --token-file ./hub.token
+./mnemon-harness remote add my-workspace --endpoint https://mnemon-hub.example --token-file ./hub.token
 ```
 
 Experimental GitHub publication backend:
 
 ```sh
-./mnemon-harness sync connect self \
+./mnemon-harness remote add self \
   --backend github \
   --direction publish \
   --github-repo mnemon-dev/mnemon-teamwork-example \
   --github-branch mnemon/agent-a \
   --token-file ~/.config/mnemon/github.token
 
-./mnemon-harness sync connect agent-b \
+./mnemon-harness remote add agent-b \
   --backend github \
   --direction subscribe \
   --github-repo mnemon-dev/mnemon-teamwork-example \
