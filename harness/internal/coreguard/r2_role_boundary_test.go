@@ -13,19 +13,6 @@ type roleImportBoundary struct {
 
 var displaySurfaceImportBoundaries = []roleImportBoundary{
 	{
-		pkg: "projection",
-		forbids: []string{
-			"harness/internal/mnemond/access",
-			"harness/internal/mnemond/admission",
-			"harness/internal/mnemond/state",
-			"harness/internal/runtime",
-			"harness/internal/eventstore",
-			"harness/internal/app",
-			"harness/internal/assembler",
-		},
-		rationale: "projection packages render accepted state into external artifacts and must not ingest governed events",
-	},
-	{
 		pkg: "surface/multica",
 		forbids: []string{
 			"harness/internal/mnemond/access",
@@ -56,8 +43,8 @@ var activationTraceImportBoundary = roleImportBoundary{
 
 var driverProjectionImportBoundary = roleImportBoundary{
 	pkg:       "driver",
-	forbids:   []string{"harness/internal/projection"},
-	rationale: "driver is a CLI adapter facade during R2 cleanup; projection formatting must stay in projection/surface packages",
+	forbids:   []string{},
+	rationale: "driver is a CLI adapter facade during R2 cleanup (projection package removed in R4 S0)",
 }
 
 func TestR2RoleBoundaryGuardLogicIsNotVacuous(t *testing.T) {
@@ -69,9 +56,6 @@ func TestR2RoleBoundaryGuardLogicIsNotVacuous(t *testing.T) {
 	}
 	if !roleImportForbidden("github.com/mnemon-dev/mnemon/harness/internal/event", activationTraceImportBoundary.forbids) {
 		t.Fatal("activation trace boundary guard must flag event model imports")
-	}
-	if !roleImportForbidden("github.com/mnemon-dev/mnemon/harness/internal/projection", driverProjectionImportBoundary.forbids) {
-		t.Fatal("driver display boundary guard must flag projection imports")
 	}
 }
 

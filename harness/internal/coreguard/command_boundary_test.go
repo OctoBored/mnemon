@@ -21,7 +21,6 @@ var commandImportBoundaries = []commandImportBoundary{
 		forbids: []string{
 			"harness/internal/mnemonhub",
 			"harness/internal/productconfig",
-			"harness/internal/projection",
 			"harness/internal/surface/",
 			"harness/cmd/",
 		},
@@ -41,7 +40,6 @@ var commandImportBoundaries = []commandImportBoundary{
 			"harness/internal/mnemond/admission",
 			"harness/internal/mnemond/presentation",
 			"harness/internal/productconfig",
-			"harness/internal/projection",
 			"harness/internal/runtime",
 			"harness/internal/surface/",
 			"harness/cmd/",

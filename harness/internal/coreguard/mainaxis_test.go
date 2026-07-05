@@ -50,7 +50,6 @@ var packageMainAxisInventory = map[string]packageMainAxis{
 	"mnemonhub":       {owner: ownerMnemonhub, role: "remote accepted event exchange server and exchange mechanics", target: "mnemonhub"},
 	"participant":     {owner: ownerParticipant, role: "principal identity and participant list helpers shared by product config and adapters", target: "participant"},
 	"productconfig":   {owner: ownerProductConfig, role: "harness product configuration for agents, connections, daemon workers, and surfaces", target: "product/config"},
-	"projection":      {owner: ownerDisplaySurface, role: "accepted/derived state material prepared for external display surfaces", target: "projection"},
 	"replay":          {owner: ownerMnemond, role: "mnemond determinism verification", target: "mnemond/replay"},
 	"runtime":         {owner: ownerMnemond, role: "local mnemond event runtime", target: "mnemond"},
 	"session":         {owner: ownerProductConfig, role: "harness session records and external attachment policy", target: "product/session"},
