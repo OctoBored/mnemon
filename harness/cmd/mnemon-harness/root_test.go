@@ -66,8 +66,6 @@ func TestProductHelpDoesNotExposeInternalVocabulary(t *testing.T) {
 		{"setup", "--help"},
 		{"local", "run", "--help"},
 		{"status", "--help"},
-		{"sync", "--help"},
-		{"sync", "connect", "--help"},
 		{"agent", "--help"},
 		{"agent", "add", "--help"},
 		{"connect", "--help"},
@@ -90,7 +88,6 @@ func TestInternalCommandsStayHidden(t *testing.T) {
 		{"control"},
 		{"loop"},
 		{"local"},
-		{"sync"},
 		{"token"},
 		{"tower"},
 	} {

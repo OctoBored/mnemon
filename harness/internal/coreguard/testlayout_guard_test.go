@@ -17,8 +17,6 @@ import (
 
 var grandfatheredTestFiles = map[string]bool{
 	"cmd/mnemon-harness/config_daemon_test.go":              true,
-	"cmd/mnemon-harness/sync_probe_test.go":                 true,
-	"cmd/mnemon-harness/sync_security_test.go":              true,
 	"internal/app/coordination_test.go":                     true,
 	"internal/app/cutover_parity_test.go":                   true,
 	"internal/app/driver_wiring_test.go":                    true,

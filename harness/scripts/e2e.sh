@@ -551,7 +551,7 @@ run_sync_pair() {
 		local tok=".mnemon/harness/channel/credentials/codex-project.token"
 		"$MH" setup --host codex --principal codex@project --control-url http://127.0.0.1:8787 >/dev/null
 		"$MH" setup --host codex --loop journal --principal codex@project --control-url http://127.0.0.1:8787 >/dev/null
-		"$MH" sync connect hub --remote-url https://127.0.0.1:9787 \
+		"$MH" remote add hub --endpoint https://127.0.0.1:9787 \
 			--token-file "$hubdir/replica-a.token" --ca-file "$tlsdir/cert.pem" >/dev/null
 		"$MH" local run --sync-interval 100ms >"$WORK/run-sync-a.log" 2>&1 &
 		echo $! >"$WORK/sync-a.pid"
@@ -582,7 +582,7 @@ run_sync_pair() {
 		local tok=".mnemon/harness/channel/credentials/codex-project.token"
 		"$MH" setup --host codex --principal codex@project --control-url http://127.0.0.1:8899 >/dev/null
 		"$MH" setup --host codex --loop journal --principal codex@project --control-url http://127.0.0.1:8899 >/dev/null
-		"$MH" sync connect hub --remote-url https://127.0.0.1:9787 \
+		"$MH" remote add hub --endpoint https://127.0.0.1:9787 \
 			--token-file "$hubdir/replica-b.token" --ca-file "$tlsdir/cert.pem" >/dev/null
 		"$MH" local run --sync-interval 100ms >"$WORK/run-sync-b.log" 2>&1 &
 		echo $! >"$WORK/sync-b.pid"
@@ -604,18 +604,17 @@ run_sync_pair() {
 			[ "$seen" = 1 ] && [ "$jseen" = 1 ] && [ "$aseen" = 1 ] && break
 			sleep 0.2
 		done
-		# Diagnosable-flake margin (LOW-11): assert the hub actually RECEIVED A's push, separately
-		# from B's pull arriving. A flake then reads as "push never arrived" (received=0) vs "pull
-		# never ran" (received>=1 but B unseen) instead of one opaque timeout. /sync/status accepts
-		# GET (frozen verb-method map); replica-a's token authorizes it over the pinned TLS cert.
-		local hubstatus
-		hubstatus="$(curl -sS --cacert "$tlsdir/cert.pem" \
-			-H "Authorization: Bearer $(tr -d '\n' <"$hubdir/replica-a.token")" \
-			https://127.0.0.1:9787/sync/status 2>/dev/null)"
-		case "$hubstatus" in
-			*'"hub_events_received":0'*|'') echo "hub never received A's push (status: ${hubstatus:-<empty>})"; tail -5 "$WORK/run-sync-b.log"; exit 1 ;;
-			*'"hub_events_received":'*) ;;
-			*) echo "unexpected hub status: $hubstatus"; exit 1 ;;
+		# Diagnosable-flake margin (LOW-11): assert the hub actually RECEIVED A's
+		# capsules, separately from B's pull arriving. replica-b's token pulls the
+		# feed (origin exclusion hides nothing from B) over the pinned TLS cert.
+		local hubfeed
+		hubfeed="$(curl -sS --cacert "$tlsdir/cert.pem" \
+			-H "Authorization: Bearer $(tr -d '\n' <"$hubdir/replica-b.token")" \
+			"https://127.0.0.1:9787/capsules?cursor=0" 2>/dev/null)"
+		case "$hubfeed" in
+			*'"items":[]'*|'') echo "hub never received A's capsules (feed: ${hubfeed:-<empty>})"; tail -5 "$WORK/run-sync-b.log"; exit 1 ;;
+			*payloadType*) ;;
+			*) echo "unexpected hub feed: $hubfeed"; exit 1 ;;
 		esac
 		[ "$seen" = 1 ] || { echo "B never saw A's progress event within 20s (hub received the push: $hubstatus -> pull side failed)"; tail -5 "$WORK/run-sync-b.log"; exit 1; }
 		[ "$jseen" = 1 ] || { echo "B never saw A's external journal event within 20s (descriptor-derived sync path failed for a declared kind)"; tail -5 "$WORK/run-sync-b.log"; exit 1; }
@@ -657,11 +656,11 @@ run_sync_pair() {
 		local cred="$hubdir/replica-a.token"
 		cp "$cred" "$WORK/cred.bak"
 		printf '%s\n' "000000000000000000000000000000000000000000000000" >"$cred"
-		if "$MH" sync push --once >/dev/null 2>&1; then
+		if "$MH" push >/dev/null 2>&1; then
 			echo "unknown-token push must be refused"; exit 1
 		fi
 		cp "$WORK/cred.bak" "$cred"
-		"$MH" sync push --once >/dev/null 2>&1 || { echo "right-token push must succeed"; exit 1; }
+		"$MH" push >/dev/null 2>&1 || { echo "right-token push must succeed"; exit 1; }
 	) || fail "authn leg failed"
 	kill "$hubpid" 2>/dev/null; wait "$hubpid" 2>/dev/null || true
 	rm -f "$PIDFILE"

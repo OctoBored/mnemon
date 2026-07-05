@@ -14,15 +14,17 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemonhub/exchange"
 )
 
 var (
-	remoteAddEndpoint  string
-	remoteAddToken     string
-	remoteAddTokenFile string
-	remoteAddCAFile    string
-	remoteAddDirection string
+	remoteAddEndpoint      string
+	remoteAddToken         string
+	remoteAddTokenFile     string
+	remoteAddCAFile        string
+	remoteAddDirection     string
+	remoteAddAllowInsecure bool
 )
 
 func init() {
@@ -43,6 +45,9 @@ func init() {
 			if strings.TrimSpace(remoteAddEndpoint) == "" {
 				return fmt.Errorf("--endpoint is required")
 			}
+			if err := access.ValidateSyncEndpoint(remoteAddEndpoint, remoteAddAllowInsecure); err != nil {
+				return err
+			}
 			path := resolvedSyncRemotesPath()
 			if err := upsertSyncRemote(path, syncProjectRoot(), id, exchange.RemoteBackendHTTP, remoteAddDirection, strings.TrimSpace(remoteAddEndpoint), remoteAddToken, remoteAddTokenFile, remoteAddCAFile); err != nil {
 				return err
@@ -56,6 +61,7 @@ func init() {
 	add.Flags().StringVar(&remoteAddTokenFile, "token-file", "", "existing token file to reference instead of --token")
 	add.Flags().StringVar(&remoteAddCAFile, "ca-file", "", "pinned TLS root (PEM); empty trusts system roots")
 	add.Flags().StringVar(&remoteAddDirection, "direction", "", "bidirectional (default), publish, or subscribe")
+	add.Flags().BoolVar(&remoteAddAllowInsecure, "allow-insecure", false, "explicitly allow a plaintext non-loopback endpoint (T2 downgrade)")
 
 	list := &cobra.Command{
 		Use:   "list",

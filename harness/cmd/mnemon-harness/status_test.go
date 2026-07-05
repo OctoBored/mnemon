@@ -11,6 +11,7 @@ import (
 	"github.com/mnemon-dev/mnemon/harness/internal/app"
 	"github.com/mnemon-dev/mnemon/harness/internal/contract"
 	"github.com/mnemon-dev/mnemon/harness/internal/mnemond/access"
+	"github.com/mnemon-dev/mnemon/harness/internal/mnemonhub/exchange"
 	"github.com/mnemon-dev/mnemon/harness/internal/runtime"
 )
 
@@ -111,13 +112,11 @@ func TestProductStatusUsesReachableLocalMnemon(t *testing.T) {
 func TestProductStatusReportsConnectedRemoteWorkspace(t *testing.T) {
 	projectRoot := t.TempDir()
 	setupProductIntegration(t, projectRoot)
-	restoreSyncFlags(t)
 	syncRoot = projectRoot
-	syncRemoteURL = "https://remote.example.test"
-	syncRemoteToken = "secret-status-token"
-	connectCmd, _ := testCommand()
-	if err := runSyncConnect(connectCmd, []string{"team"}); err != nil {
-		t.Fatalf("sync connect for status: %v", err)
+	syncRemotesPath = ""
+	t.Cleanup(func() { syncRoot = "."; syncRemotesPath = "" })
+	if err := upsertSyncRemote(resolvedSyncRemotesPath(), projectRoot, "team", exchange.RemoteBackendHTTP, "", "https://remote.example.test", "secret-status-token", "", ""); err != nil {
+		t.Fatalf("register remote for status: %v", err)
 	}
 
 	restoreStatusFlags(t)

@@ -26,7 +26,6 @@ var commandEndpoints = map[string]bool{
 	"PUT/GET /blobs/{digest}": true,
 	"GET /surface/deliveries": true,
 	"GET /status":             true,
-	"sync wire (hub)":         true, // legacy rows die at S4d completion
 	"POST /capsules (hub)":    true,
 	"GET /capsules (hub)":     true,
 }
@@ -84,9 +83,5 @@ var commandRegistry = []CommandSpec{
 	{Path: "local run", Audience: "debug", Edge: "node", Endpoint: "-"},
 	{Path: "local status", Audience: "debug", Edge: "node", Endpoint: "-"},
 	{Path: "local stop", Audience: "debug", Edge: "node", Endpoint: "-"},
-	{Path: "sync connect", Audience: "debug", Edge: "federate", Endpoint: "sync wire (hub)"},
-	{Path: "sync push", Audience: "debug", Edge: "federate", Endpoint: "sync wire (hub)"},
-	{Path: "sync pull", Audience: "debug", Edge: "federate", Endpoint: "sync wire (hub)"},
-	{Path: "sync run", Audience: "debug", Edge: "federate", Endpoint: "sync wire (hub)"},
 	{Path: "token rotate", Audience: "debug", Edge: "none", Endpoint: "-"},
 }
